@@ -363,6 +363,29 @@ contains
 
     end subroutine s_mpi_allreduce_sum
 
+    subroutine s_mpi_scatter(var_glb, var_loc)
+        integer, dimension(1:num_procs), intent(in) :: var_glb
+        integer, intent(inout) ::var_loc
+
+#ifdef MFC_MPI
+
+        call MPI_SCATTER(var_glb, 1, MPI_INTEGER, var_loc, 1, &
+        MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+
+#endif
+    end subroutine s_mpi_scatter
+
+    subroutine s_mpi_scatter_real(var_glb, var_loc)
+        real(wp), dimension(1:num_procs), intent(in) :: var_glb
+        real(wp), intent(inout) ::var_loc
+
+#ifdef MFC_MPI
+
+        call MPI_SCATTER(var_glb, 1, mpi_p, var_loc, 1, &
+        mpi_p, 0, MPI_COMM_WORLD, ierr)
+
+#endif
+    end subroutine s_mpi_scatter_real
     !>  The following subroutine takes the input local variable
         !!      from all processors and reduces to the minimum of all
         !!      values. The reduced variable is recorded back onto the

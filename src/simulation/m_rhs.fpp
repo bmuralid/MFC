@@ -64,6 +64,7 @@ module m_rhs
     private; public :: s_initialize_rhs_module, &
  s_compute_rhs, &
  s_pressure_relaxation_procedure, &
+ s_reinitialize_rhs_module, &
  s_finalize_rhs_module
 
     !! This variable contains the WENO-reconstructed values of the cell-average
@@ -558,8 +559,22 @@ contains
         ! END: Allocation/Association of flux_n, flux_src_n, and flux_gsrc_n
 
         if (alt_soundspeed) then
-            @:ALLOCATE(blkmod1(0:m, 0:n, 0:p), blkmod2(0:m, 0:n, 0:p), alpha1(0:m, 0:n, 0:p), alpha2(0:m, 0:n, 0:p), Kterm(0:m, 0:n, 0:p))
-        end if
+            @:ALLOCATE(blkmod1(-buff_size_lb(1) + 0:m + buff_size_lb(2), & 
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
+                blkmod2(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
+                alpha1(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
+                alpha2(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)),&
+                Kterm(-buff_size_lb(1)+ 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+         end if
 
         @:ALLOCATE(gamma_min(1:num_fluids), pres_inf(1:num_fluids))
 
@@ -596,10 +611,324 @@ contains
         end do
 
         if (bubbles_euler) then
-            @:ALLOCATE(nbub(0:m, 0:n, 0:p))
+            @:ALLOCATE(nbub(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
         end if
 
     end subroutine s_initialize_rhs_module
+
+    subroutine s_reinitialize_rhs_module
+
+        integer :: i, j, k, l, id !< Generic loop iterators
+
+        !$acc enter data copyin(idwbuff, idwbuff)
+        !$acc update device(idwbuff, idwbuff)
+        !$acc update device(startx, starty, startz, m, n, p, buff_size)
+
+        do l = 1, sys_size
+            !$acc update host(q_cons_qp%vf(l)%sf)
+            !$acc exit data detach(q_cons_qp%vf(l)%sf)
+            q_cons_qp%vf(l)%sf(idwbuff(1)%beg:, &
+                idwbuff(2)%beg:, &
+                idwbuff(3)%beg:) =>  q_cons_qp%vf(l)%sf
+            !$acc enter data attach(q_cons_qp%vf(l)%sf)
+            !$acc update device(q_cons_qp%vf(l)%sf)
+        end do
+
+        do l = mom_idx%beg, E_idx
+            !$acc exit data detach(q_prim_qp%vf(l)%sf)
+            q_prim_qp%vf(l)%sf(idwbuff(1)%beg:,  &
+                idwbuff(2)%beg:, &
+                idwbuff(3)%beg:) =>  q_prim_qp%vf(l)%sf
+            !$acc enter data attach(q_prim_qp%vf(l)%sf)
+        end do
+
+        if (surface_tension) then
+            do l = adv_idx%end + 1, sys_size - 1
+                !$acc exit data detach(q_prim_qp%vf(l)%sf)
+                q_prim_qp%vf(l)%sf(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:) => &
+                q_prim_qp%vf(l)%sf
+                !$acc enter data attach(q_prim_qp%vf(l)%sf)
+            end do
+        else
+            do l = adv_idx%end + 1, sys_size
+                !$acc exit data detach(q_prim_qp%vf(l)%sf)
+                q_prim_qp%vf(l)%sf(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:) => &
+                q_prim_qp%vf(l)%sf
+                !$acc enter data attach(q_prim_qp%vf(l)%sf)
+            end do
+
+        end if
+
+        ! @:ACC_SETUP_VFs(q_cons_qp, q_prim_qp)
+        do l = 1, cont_idx%end
+            q_prim_qp%vf(l)%sf => q_cons_qp%vf(l)%sf
+            !$acc enter data copyin(q_prim_qp%vf(l)%sf)
+            !$acc enter data attach(q_prim_qp%vf(l)%sf)
+        end do
+
+        do l = adv_idx%beg, adv_idx%end
+            q_prim_qp%vf(l)%sf => q_cons_qp%vf(l)%sf
+            !$acc enter data copyin(q_prim_qp%vf(l)%sf)
+            !$acc enter data attach(q_prim_qp%vf(l)%sf)
+        end do
+
+        if (surface_tension) then
+            q_prim_qp%vf(c_idx)%sf => &
+                q_cons_qp%vf(c_idx)%sf
+            !$acc enter data copyin(q_prim_qp%vf(c_idx)%sf)
+            !$acc enter data attach(q_prim_qp%vf(c_idx)%sf)
+        end if
+
+        if (viscous) then
+            do i = 1, num_dims
+                !$acc exit data detach(tau_Re_vf(cont_idx%end + i)%sf)
+                tau_Re_vf(cont_idx%end + i)%sf(idwbuff(1)%beg:, &
+                                                idwbuff(2)%beg:, &
+                                                idwbuff(3)%beg:) => tau_Re_vf(cont_idx%end + i)%sf
+                !$acc enter data attach(tau_Re_vf(cont_idx%end + i)%sf)
+                ! @:ACC_SETUP_SFs(tau_Re_vf(cont_idx%end + i))
+            end do
+            !$acc exit data detach(tau_Re_vf(E_idx)%sf)
+            tau_Re_vf(E_idx)%sf(idwbuff(1)%beg:, &
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => tau_Re_vf(E_idx)%sf
+            !$acc enter data attach(tau_Re_vf(E_idx)%sf)
+            ! @:ACC_SETUP_SFs(tau_Re_vf(E_idx))
+        end if
+
+        ! ==================================================================
+
+        if (qbmm) then
+            do i = 0, 2
+                do j = 0, 2
+                    do k = 1, nb
+                        !$acc exit data detach(mom_3d(i, j, k)%sf)
+                        mom_3d(i, j, k)%sf(idwbuff(1)%beg:, &
+                                           idwbuff(2)%beg:, &
+                                           idwbuff(3)%beg:) => mom_3d(i, j, k)%sf
+                        !$acc enter data attach(mom_3d(i, j, k)%sf)
+                        ! @:ACC_SETUP_SFs(mom_3d(i, j, k))
+                    end do
+                end do
+            end do
+
+            do i = 1, nmomsp
+                !$acc exit data detach(mom_sp(i)%sf)
+                mom_sp(i)%sf(idwbuff(1)%beg:, &
+                             idwbuff(2)%beg:, &
+                             idwbuff(3)%beg:) => mom_sp(i)%sf
+                !$acc enter data attach(mom_sp(i)%sf)
+                ! @:ACC_SETUP_SFs(mom_sp(i))
+            end do
+        end if
+
+        do i = 1, num_dims
+            do l = mom_idx%beg, mom_idx%end
+                !$acc exit data detach(qL_prim(i)%vf(l)%sf)
+                !$acc exit data detach(qR_prim(i)%vf(l)%sf)
+                qL_prim(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                    idwbuff(2)%beg:, &
+                    idwbuff(3)%beg:) => qL_prim(i)%vf(l)%sf
+                qR_prim(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                    idwbuff(2)%beg:, &
+                    idwbuff(3)%beg:) => qR_prim(i)%vf(l)%sf
+                !$acc enter data attach(qR_prim(i)%vf(l)%sf)
+                !$acc enter data attach(qL_prim(i)%vf(l)%sf)
+            end do
+            ! @:ACC_SETUP_VFs(qL_prim(i), qR_prim(i))
+        end do
+
+        if (mpp_lim .and. bubbles_euler) then
+            alf_sum%sf(idwbuff(1)%beg:, &
+                idwbuff(2)%beg:, &
+                idwbuff(3)%beg:) => alf_sum%sf
+        end if
+
+        if (viscous) then
+            do l = mom_idx%beg, mom_idx%end
+                !$acc exit data detach(dqL_prim_dx_n(1)%vf(l)%sf)
+                dq_prim_dx_qp(1)%vf(l)%sf(idwbuff(1)%beg:, &
+                          & idwbuff(2)%beg:, &
+                          & idwbuff(3)%beg:) => dq_prim_dx_qp(1)%vf(l)%sf
+                !$acc enter data attach(dq_prim_dx_qp(1)%vf(l)%sf)
+            end do
+
+            ! @:ACC_SETUP_VFs(dq_prim_dx_qp(1))
+
+            if (n > 0) then
+
+                do l = mom_idx%beg, mom_idx%end
+                    !$acc exit data detach(dq_prim_dy_qp(1)%vf(l)%sf)
+                    dq_prim_dy_qp(1)%vf(l)%sf(idwbuff(1)%beg:, &
+                              & idwbuff(2)%beg:, &
+                              & idwbuff(3)%beg:) => dq_prim_dy_qp(1)%vf(l)%sf
+                    !$acc enter data attach(dq_prim_dy_qp(1)%vf(l)%sf)
+                end do
+
+                ! @:ACC_SETUP_VFs(dq_prim_dy_qp(1))
+
+                if (p > 0) then
+
+                    do l = mom_idx%beg, mom_idx%end
+                        !$acc exit data detach(dq_prim_dz_qp(1)%vf(l)%sf)
+                        dq_prim_dz_qp(1)%vf(l)%sf(idwbuff(1)%beg:, &
+                                  & idwbuff(2)%beg:, &
+                                  & idwbuff(3)%beg:) => dq_prim_dz_qp(1)%vf(l)%sf
+                        !$acc enter data attach(dq_prim_dz_qp(1)%vf(l)%sf)
+                    end do
+                    ! @:ACC_SETUP_VFs(dq_prim_dz_qp(1))
+                end if
+
+            end if
+        end if
+        if (viscous) then
+            do i = 1, num_dims
+
+                do l = mom_idx%beg, mom_idx%end
+                    !$acc exit data detach(dqL_prim_dx_n(i)%vf(l)%sf)
+                    dqL_prim_dx_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:) => dqL_prim_dx_n(i)%vf(l)%sf
+                    !$acc enter data attach(dqL_prim_dx_n(i)%vf(l)%sf)
+                    !$acc exit data detach(dqR_prim_dx_n(i)%vf(l)%sf)
+                    dqR_prim_dx_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:) => dqR_prim_dx_n(i)%vf(l)%sf
+                    !$acc enter data attach(dqR_prim_dx_n(i)%vf(l)%sf)
+                end do
+
+                if (n > 0) then
+                    do l = mom_idx%beg, mom_idx%end
+                        !$acc exit data detach(dqL_prim_dy_n(i)%vf(l)%sf)
+                        dqL_prim_dy_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => dqL_prim_dy_n(i)%vf(l)%sf
+                        !$acc enter data attach(dqL_prim_dy_n(i)%vf(l)%sf)
+                        !$acc exit data detach(dqR_prim_dy_n(i)%vf(l)%sf)
+                        dqR_prim_dy_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => dqR_prim_dy_n(i)%vf(l)%sf
+                        !$acc enter data attach(dqR_prim_dy_n(i)%vf(l)%sf)
+                    end do
+                end if
+
+                if (p > 0) then
+                    do l = mom_idx%beg, mom_idx%end
+                        !$acc exit data detach(dqL_prim_dz_n(i)%vf(l)%sf)
+                        dqL_prim_dz_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => dqL_prim_dz_n(i)%vf(l)%sf
+                        !$acc enter data attach(dqL_prim_dz_n(i)%vf(l)%sf)
+
+                        !$acc exit data detach(dqR_prim_dz_n(i)%vf(l)%sf)
+                        dqR_prim_dz_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => dqR_prim_dz_n(i)%vf(l)%sf
+                        !$acc enter data attach(dqR_prim_dz_n(i)%vf(l)%sf)
+                    end do
+                end if
+
+                ! @:ACC_SETUP_VFs(dqL_prim_dx_n(i), dqL_prim_dy_n(i), dqL_prim_dz_n(i))
+                ! @:ACC_SETUP_VFs(dqR_prim_dx_n(i), dqR_prim_dy_n(i), dqR_prim_dz_n(i))
+            end do
+        end if
+        ! Allocation/Association of flux_n, flux_src_n, and flux_gsrc_n ===
+        do i = 1, num_dims
+
+            if (i == 1) then
+                do l = 1, sys_size
+                    !$acc exit data detach(flux_n(i)%vf(l)%sf)
+                    flux_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                             idwbuff(2)%beg:, &
+                             idwbuff(3)%beg:) => flux_n(i)%vf(l)%sf
+                    !$acc enter data attach(flux_n(i)%vf(l)%sf)
+                    !$acc exit data detach(flux_gsrc_n(i)%vf(l)%sf)
+                    flux_gsrc_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
+                    !$acc enter data attach(flux_gsrc_n(i)%vf(l)%sf)
+                end do
+
+                if (viscous .or. surface_tension) then
+                    do l = mom_idx%beg, E_idx
+                        !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
+                        flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                                 idwbuff(2)%beg:, &
+                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
+                        !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
+                    end do
+                end if
+
+                !$acc exit data detach(flux_src_n(i)%vf(adv_idx%beg)%sf)
+                flux_src_n(i)%vf(adv_idx%beg)%sf(idwbuff(1)%beg:, &
+                         idwbuff(2)%beg:, &
+                         idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
+                !$acc enter data attach(flux_src_n(i)%vf(adv_idx%beg)%sf)
+
+                if (riemann_solver == 1) then
+                    do l = adv_idx%beg + 1, adv_idx%end
+                        !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
+                        flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                                 idwbuff(2)%beg:, &
+                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
+                        !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
+                    end do
+                end if
+
+                if (chemistry) then
+                    do l = chemxb, chemxe
+                        !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
+                        flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                                 idwbuff(2)%beg:, &
+                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
+                        !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
+                    end do
+                end if
+
+            else
+                do l = 1, sys_size
+                    !$acc exit data detach(flux_gsrc_n(i)%vf(l)%sf)
+                    flux_gsrc_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
+                    !$acc enter data attach(flux_gsrc_n(i)%vf(l)%sf)
+                end do
+            end if
+
+            ! @:ACC_SETUP_VFs(flux_n(i), flux_src_n(i), flux_gsrc_n(i))
+            if (i == 1) then
+                if (riemann_solver /= 1) then
+                    do l = adv_idx%beg + 1, adv_idx%end
+                        flux_src_n(i)%vf(l)%sf => flux_src_n(i)%vf(adv_idx%beg)%sf
+                        !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
+                    end do
+                end if
+            else
+                do l = 1, sys_size
+                    flux_n(i)%vf(l)%sf => flux_n(1)%vf(l)%sf
+                    flux_src_n(i)%vf(l)%sf => flux_src_n(1)%vf(l)%sf
+                    !$acc enter data attach(flux_n(i)%vf(l)%sf,flux_src_n(i)%vf(l)%sf)
+                end do
+            end if
+        end do
+        ! END: Allocation/Association of flux_n, flux_src_n, and flux_gsrc_n ===
+        
+        !$acc parallel loop collapse(4) gang vector default(present)
+        do id = 1, num_dims
+            do i = 1, sys_size
+                do l = idwbuff(3)%beg, idwbuff(3)%end
+                    do k = idwbuff(2)%beg, idwbuff(2)%end
+                        do j = idwbuff(1)%beg, idwbuff(1)%end
+                            flux_gsrc_n(id)%vf(i)%sf(j, k, l) = 0d0
+                        end do
+                    end do
+                end do
+            end do
+        end do
+    end subroutine s_reinitialize_rhs_module
+
 
     subroutine s_compute_rhs(q_cons_vf, q_T_sf, q_prim_vf, rhs_vf, pb, rhs_pb, mv, rhs_mv, t_step, time_avg)
 
@@ -613,12 +942,16 @@ contains
         real(wp), intent(inout) :: time_avg
 
         real(wp), dimension(0:m, 0:n, 0:p) :: nbub
-        real(wp) :: t_start, t_finish
+        real(wp) :: t_start, t_finish, t_pause, t_resume, t_last_save
         integer :: i, j, k, l, id !< Generic loop iterators
 
         call nvtxStartRange("COMPUTE-RHS")
 
+#ifdef MFC_MPI        
+        t_start = MPI_WTIME()
+#else
         call cpu_time(t_start)
+#endif        
         ! Association/Population of Working Variables
         !$acc parallel loop collapse(4) gang vector default(present)
         do i = 1, sys_size
@@ -660,6 +993,11 @@ contains
             idwint, &
             gm_alpha_qp%vf)
         call nvtxEndRange
+#ifdef MFC_MPI
+        t_pause = MPI_WTIME()
+#else        
+        call cpu_time(t_pause)
+#endif        
 
         call nvtxStartRange("RHS-COMMUNICATION")
         call s_populate_variables_buffers(q_prim_qp%vf, pb, mv)
@@ -669,6 +1007,11 @@ contains
         if (hyperelasticity) call s_hyperelastic_rmt_stress_update(q_cons_qp%vf, q_prim_qp%vf)
         call nvtxEndRange
 
+#ifdef MFC_MPI        
+        t_resume = MPI_WTIME()
+#else        
+        call cpu_time(t_resume)
+#endif        
         if (cfl_dt) then
             if (mytime >= t_stop) return
         else
@@ -908,10 +1251,19 @@ contains
             end do
         end if
 
+#ifdef MFC_MPI        
+        t_finish = MPI_WTIME()
+#else        
         call cpu_time(t_finish)
+#endif        
 
-        if (t_step >= 4) then
-            time_avg = (abs(t_finish - t_start) + (t_step - 4)*time_avg)/(t_step - 3)
+        t_last_save = int((t_step - t_step_start)/ t_step_save) * t_step_save
+
+        if ((t_step - t_last_save) >= 4) then
+            t_finish = t_finish - t_resume + t_pause
+            time_avg = (abs(t_finish - t_start) + &
+                (t_step - 4 - t_last_save)*time_avg)/&
+                (t_step - 3 - t_last_save)
         else
             time_avg = 0._wp
         end if
@@ -1971,11 +2323,13 @@ contains
                                                   norm_dir)
 
         type(scalar_field), dimension(iv%beg:iv%end), intent(in) :: v_vf
-        real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: vL_x, vL_y, vL_z
-        real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: vR_x, vR_y, vR_z
+        real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: vL_x, vR_x
+        real(wp), dimension(starty:, startx:, startz:, 1:), intent(inout) :: vL_y, vR_y
+        real(wp), dimension(startz:, starty:, startz:, 1:), intent(inout) :: vL_z, vR_z
         integer, intent(in) :: norm_dir
 
         integer :: weno_dir !< Coordinate direction of the WENO reconstruction
+        integer :: s1, s2, s3
 
         ! Reconstruction in s1-direction
 
@@ -1983,16 +2337,43 @@ contains
             is1 = idwbuff(1); is2 = idwbuff(2); is3 = idwbuff(3)
             weno_dir = 1; is1%beg = is1%beg + weno_polyn
             is1%end = is1%end - weno_polyn
+            is1%beg = is1%beg + buff_size_lb(1)
+            is1%end = is1%end - buff_size_lb(2)
+            if (n > 0) then
+                is2%beg = is2%beg + buff_size_lb(3)
+                is2%end = is2%end - buff_size_lb(4)
+            end if
+            if (p > 0) then
+                is3%beg = is3%beg + buff_size_lb(5)
+                is3%end = is3%end - buff_size_lb(6)
+            end if
+            s1 = startx ; s2 = starty ; s3 = startz
 
         elseif (norm_dir == 2) then
             is1 = idwbuff(2); is2 = idwbuff(1); is3 = idwbuff(3)
             weno_dir = 2; is1%beg = is1%beg + weno_polyn
             is1%end = is1%end - weno_polyn
+            is1%beg = is1%beg + buff_size_lb(3)
+            is1%end = is1%end - buff_size_lb(4)
+            is2%beg = is2%beg + buff_size_lb(1)
+            is2%end = is2%end - buff_size_lb(2)
+            if (p > 0) then
+                is3%beg = is3%beg + buff_size_lb(5)
+                is3%end = is3%end - buff_size_lb(6)
+            end if
+           s1 = starty ; s2 = startx ; s3 = startz
 
         else
             is1 = idwbuff(3); is2 = idwbuff(2); is3 = idwbuff(1)
             weno_dir = 3; is1%beg = is1%beg + weno_polyn
             is1%end = is1%end - weno_polyn
+            is1%beg = is1%beg + buff_size_lb(5)
+            is1%end = is1%end - buff_size_lb(6)
+            is2%beg = is2%beg + buff_size_lb(3)
+            is2%end = is2%end - buff_size_lb(4)
+            is3%beg = is3%beg + buff_size_lb(1)
+            is3%end = is3%end - buff_size_lb(2)
+            s1 = startz ; s2 = starty ; s3 = startx
 
         end if
 

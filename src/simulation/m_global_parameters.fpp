@@ -31,6 +31,9 @@ module m_global_parameters
 
     ! Logistics
     integer :: num_procs             !< Number of processors
+    #:for dir in {'x', 'y', 'z'}
+        integer :: num_procs_${dir}$ !< Number of processors in the ${dir}$-direction
+    #:endfor    
     character(LEN=path_len) :: case_dir              !< Case folder location
     logical :: run_time_info         !< Run-time output flag
     integer :: t_step_old            !< Existing IC/grid folder
@@ -195,9 +198,19 @@ module m_global_parameters
 
     integer, allocatable, dimension(:) :: proc_coords !<
     !! Processor coordinates in MPI_CART_COMM
+    integer, allocatable, dimension(:) :: proc_coords_x, proc_coords_y, proc_coords_z !<
 
     integer, allocatable, dimension(:) :: start_idx !<
     !! Starting cell-center index of local processor in global grid
+    integer, allocatable, dimension(:) :: diff_start_idx !<
+    integer, allocatable, dimension(:) :: diff_count_idx !<
+
+    ! real(kind(0d0)), allocatable, dimension(:) :: load_factor !<
+    !! Load factor for each processor
+
+    integer, allocatable, dimension(:) :: proc_counts_x, proc_counts_y, proc_counts_z !<
+ 
+    !! Number of cells in each direction for each processor
 
     type(mpi_io_var), public :: MPI_IO_DATA
     type(mpi_io_ib_var), public :: MPI_IO_IB_DATA
@@ -286,10 +299,11 @@ module m_global_parameters
     !! The number of cells that are necessary to be able to store enough boundary
     !! conditions data to march the solution in the physical computational domain
     !! to the next time-step.
+    integer, dimension(6) :: buff_size_lb
 
     integer :: startx, starty, startz
 
-    !$acc declare create(sys_size, buff_size, startx, starty, startz, E_idx, gamma_idx, pi_inf_idx, alf_idx, n_idx, stress_idx, b_size, tensor_size, xi_idx, species_idx)
+    !$acc declare create(sys_size, buff_size, buff_size_lb, startx, starty, startz, E_idx, gamma_idx, pi_inf_idx, alf_idx, n_idx, stress_idx, b_size, tensor_size, xi_idx, species_idx)
 
     ! END: Simulation Algorithm Parameters
 
@@ -697,6 +711,8 @@ contains
             bc_${dir}$%grcbc_vel_out = .false.
         #:endfor
 
+        ! ! Load balancing parameters
+        buff_size_lb = 0
         ! Lagrangian subgrid bubble model
         bubbles_lagrange = .false.
         lag_params%solver_approach = dflt_int
@@ -1062,18 +1078,25 @@ contains
             allocate (MPI_IO_DATA%var(1:sys_size))
         end if
 
+        !$acc update device(buff_size_lb)
         do i = 1, sys_size
-            allocate (MPI_IO_DATA%var(i)%sf(0:m, 0:n, 0:p))
+            allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
             MPI_IO_DATA%var(i)%sf => null()
         end do
         if (bubbles_euler .and. qbmm .and. .not. polytropic) then
             do i = sys_size + 1, sys_size + 2*nb*4
-                allocate (MPI_IO_DATA%var(i)%sf(0:m, 0:n, 0:p))
+                allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                    -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                    -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 MPI_IO_DATA%var(i)%sf => null()
             end do
         elseif (bubbles_lagrange) then
             do i = 1, sys_size + 1
-                allocate (MPI_IO_DATA%var(i)%sf(0:m, 0:n, 0:p))
+                allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                    -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                    -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 MPI_IO_DATA%var(i)%sf => null()
             end do
         end if
@@ -1123,9 +1146,9 @@ contains
         idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
         idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
 
-        idwbuff(1)%beg = -buff_size
-        if (num_dims > 1) then; idwbuff(2)%beg = -buff_size; else; idwbuff(2)%beg = 0; end if
-        if (num_dims > 2) then; idwbuff(3)%beg = -buff_size; else; idwbuff(3)%beg = 0; end if
+        idwbuff(1)%beg = -buff_size - buff_size_lb(1)
+        if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
+        if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
 
         idwbuff(1)%end = idwint(1)%end - idwbuff(1)%beg
         idwbuff(2)%end = idwint(2)%end - idwbuff(2)%beg
@@ -1140,14 +1163,14 @@ contains
                 & idwbuff(3)%beg:idwbuff(3)%end))
         end if
 
-        startx = -buff_size
+        startx = -buff_size - buff_size_lb(1)
         starty = 0
         startz = 0
         if (n > 0) then
-            starty = -buff_size
+            starty = -buff_size - buff_size_lb(3)
         end if
         if (p > 0) then
-            startz = -buff_size
+            startz = -buff_size - buff_size_lb(5)
         end if
 
         !$acc update device(fd_order,fd_number)
@@ -1178,14 +1201,14 @@ contains
         chemxb = species_idx%beg
         chemxe = species_idx%end
 
-        !$acc update device(momxb, momxe, advxb, advxe, contxb, contxe, bubxb, bubxe, intxb, intxe, sys_size, buff_size, E_idx, alf_idx, n_idx, adv_n, adap_dt, pi_fac, strxb, strxe, chemxb, chemxe)
+        !$acc update device(momxb, momxe, advxb, advxe, contxb, contxe, bubxb, bubxe, intxb, intxe, sys_size, buff_size, buff_size_lb, E_idx, alf_idx, n_idx, adv_n, adap_dt, pi_fac, strxb, strxe, chemxb, chemxe)
         !$acc update device(b_size, xibeg, xiend, tensor_size)
 
         !$acc update device(species_idx)
         !$acc update device(cfl_target, m, n, p)
 
         !$acc update device(alt_soundspeed, acoustic_source, num_source)
-        !$acc update device(dt, sys_size, buff_size, pref, rhoref, gamma_idx, pi_inf_idx, E_idx, alf_idx, stress_idx, mpp_lim, bubbles_euler, hypoelasticity, alt_soundspeed, avg_state, num_fluids, model_eqns, num_dims, mixture_err, grid_geometry, cyl_coord, mp_weno, weno_eps, teno_CT, hyperelasticity, hyper_model, elasticity, xi_idx, low_Mach)
+        !$acc update device(dt, sys_size, buff_size, buff_size_lb, pref, rhoref, gamma_idx, pi_inf_idx, E_idx, alf_idx, stress_idx, mpp_lim, bubbles_euler, hypoelasticity, alt_soundspeed, avg_state, num_fluids, model_eqns, num_dims, mixture_err, grid_geometry, cyl_coord, mp_weno, weno_eps, teno_CT, hyperelasticity, hyper_model, elasticity, xi_idx, low_Mach)
 
         #:if not MFC_CASE_OPTIMIZATION
             !$acc update device(wenojs, mapped_weno, wenoz, teno)
@@ -1199,21 +1222,93 @@ contains
         !$acc enter data copyin(relax, relax_model, palpha_eps,ptgalpha_eps)
 
         ! Allocating grid variables for the x-, y- and z-directions
-        @:ALLOCATE(x_cb(-1 - buff_size:m + buff_size))
-        @:ALLOCATE(x_cc(-buff_size:m + buff_size))
-        @:ALLOCATE(dx(-buff_size:m + buff_size))
+        @:ALLOCATE(x_cb(-1 - buff_size - buff_size_lb(1):m + buff_size + buff_size_lb(2)))
+        @:ALLOCATE(x_cc(-buff_size - buff_size_lb(1) :m + buff_size + buff_size_lb(2)))
+        @:ALLOCATE(dx(-buff_size - buff_size_lb(1):m + buff_size + buff_size_lb(2)))
 
         if (n == 0) return; 
-        @:ALLOCATE(y_cb(-1 - buff_size:n + buff_size))
-        @:ALLOCATE(y_cc(-buff_size:n + buff_size))
-        @:ALLOCATE(dy(-buff_size:n + buff_size))
+        @:ALLOCATE(y_cb(-1 - buff_size - buff_size_lb(3):n + buff_size + buff_size_lb(4)))
+        @:ALLOCATE(y_cc(-buff_size -buff_size_lb(3):n + buff_size + buff_size_lb(4)))
+        @:ALLOCATE(dy(-buff_size - buff_size_lb(3):n + buff_size +  buff_size_lb(4)))
 
         if (p == 0) return; 
-        @:ALLOCATE(z_cb(-1 - buff_size:p + buff_size))
-        @:ALLOCATE(z_cc(-buff_size:p + buff_size))
-        @:ALLOCATE(dz(-buff_size:p + buff_size))
+        @:ALLOCATE(z_cb(-1 - buff_size -buff_size_lb(5):p + buff_size + buff_size_lb(6)))
+        @:ALLOCATE(z_cc(-buff_size - buff_size_lb(5):p + buff_size + buff_size_lb(6)))
+        @:ALLOCATE(dz(-buff_size - buff_size_lb(5) :p + buff_size +  buff_size_lb(6)))
 
     end subroutine s_initialize_global_parameters_module
+
+    subroutine s_reinitialize_global_parameters_module
+
+        integer :: i, j, k
+        integer :: fac
+
+         ! update the global variable buff_size_lb
+        buff_size_lb(1) = buff_size_lb(1) + diff_start_idx(1)
+        buff_size_lb(2) = buff_size_lb(2)  - diff_count_idx(1) - diff_start_idx(1)
+        if (n > 0) then
+            buff_size_lb(3) = buff_size_lb(3) + diff_start_idx(2)
+            buff_size_lb(4) = buff_size_lb(4)  - diff_count_idx(2) - diff_start_idx(2)
+        endif
+
+        if (p > 0) then
+            buff_size_lb(5) = buff_size_lb(5) + diff_start_idx(3)
+            buff_size_lb(6) = buff_size_lb(6)  - diff_count_idx(3) - diff_start_idx(3)
+        endif
+        !$acc update device(buff_size_lb)
+
+        ! Configuring Coordinate Direction Indexes =========================
+        idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
+        idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
+
+        idwbuff(1)%beg = -buff_size - buff_size_lb(1)
+        if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
+        if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
+
+        idwbuff(1)%end = idwint(1)%end + buff_size + buff_size_lb(2)
+        if (num_dims > 1) then
+            idwbuff(2)%end = idwint(2)%end + buff_size + buff_size_lb(4)
+        else
+            idwbuff(2)%end = idwint(2)%end
+        end if
+        if (num_dims > 2) then
+            idwbuff(3)%end = idwint(3)%end + buff_size + buff_size_lb(6)
+        else
+            idwbuff(3)%end = idwint(3)%end
+        end if
+        !$acc update device(idwint, idwbuff)
+        ! ==================================================================
+
+        startx = -buff_size - buff_size_lb(1)
+        starty = 0
+        startz = 0
+        if (n > 0) then
+            starty = -buff_size - buff_size_lb(3)
+        end if
+        if (p > 0) then
+            startz = -buff_size - buff_size_lb(5)
+        end if
+
+        !$acc update device(startx, starty, startz)
+
+        ! @:DEALLOCATE(x_cb, x_cc, dx)
+        ! ! Allocating grid variables for the x-, y- and z-directions
+        ! @:ALLOCATE(x_cb(-1 - buff_size - buff_size_lb(1):m + buff_size + buff_size_lb(2)))
+        ! @:ALLOCATE(x_cc(-buff_size - buff_size_lb(1) :m + buff_size + buff_size_lb(2)))
+        ! @:ALLOCATE(dx(-buff_size - buff_size_lb(1):m + buff_size + buff_size_lb(2)))
+
+        ! if (n == 0) return; 
+        ! @:DEALLOCATE(y_cb, y_cc, dy)
+        ! @:ALLOCATE(y_cb(-1 - buff_size - buff_size_lb(3):n + buff_size + buff_size_lb(4)))
+        ! @:ALLOCATE(y_cc(-buff_size -buff_size_lb(3):n + buff_size + buff_size_lb(4)))
+        ! @:ALLOCATE(dy(-buff_size - buff_size_lb(3):n + buff_size +  buff_size_lb(4)))
+
+        ! if (p == 0) return; 
+        ! @:DEALLOCATE(z_cb, z_cc, dz)
+        ! @:ALLOCATE(z_cb(-1 - buff_size -buff_size_lb(5):p + buff_size + buff_size_lb(6)))
+        ! @:ALLOCATE(z_cc(-buff_size - buff_size_lb(5):p + buff_size + buff_size_lb(6)))
+        ! @:ALLOCATE(dz(-buff_size - buff_size_lb(5) :p + buff_size +  buff_size_lb(6)))
+    end subroutine s_reinitialize_global_parameters_module
 
     !> Initializes parallel infrastructure
     subroutine s_initialize_parallel_io
@@ -1223,6 +1318,16 @@ contains
         #:endif
 
         allocate (proc_coords(1:num_dims))
+
+        #:for dir in {'x', 'y', 'z'}
+            allocate ( proc_coords_${dir}$(1:num_procs) )
+        #:endfor
+
+        ! allocate (load_factor(1:num_procs)) 
+
+        #:for dir in {'x', 'y', 'z'}
+            allocate (proc_counts_${dir}$(1:num_procs))
+        #:endfor
 
         if (parallel_io .neqv. .true.) return
 
@@ -1242,6 +1347,9 @@ contains
 
         allocate (start_idx(1:num_dims))
 
+        allocate (diff_start_idx(1:num_dims))
+        allocate (diff_count_idx(1:num_dims))
+
 #endif
 
     end subroutine s_initialize_parallel_io
@@ -1259,8 +1367,14 @@ contains
         end if
 
         deallocate (proc_coords)
-        if (parallel_io) then
+        #:for dir in {'x', 'y', 'z'}
+            deallocate (proc_coords_${dir}$)
+            deallocate (proc_counts_${dir}$)
+        #:endfor
+         if (parallel_io) then
             deallocate (start_idx)
+            deallocate (diff_start_idx)
+            deallocate (diff_count_idx)
 
             if (bubbles_lagrange) then
                 do i = 1, sys_size + 1

@@ -110,10 +110,17 @@ contains
         end do
         !$acc update device(loc_acoustic, mag, dipole, support, length, height, wavelength, frequency, gauss_sigma_dist, gauss_sigma_time, foc_length, aperture, npulse, pulse, dir, delay, element_polygon_ratio, rotate_angle, element_spacing_angle, num_elements, element_on, bb_num_freq, bb_bandwidth, bb_lowest_freq)
 
-        @:ALLOCATE(mass_src(0:m, 0:n, 0:p))
-        @:ALLOCATE(mom_src(1:num_dims, 0:m, 0:n, 0:p))
-        @:ALLOCATE(E_src(0:m, 0:n, 0:p))
+        @:ALLOCATE(mass_src(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+            -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+            -buff_size_lb(5) + 0:p + buff_size_lb(6)))
 
+        @:ALLOCATE(mom_src(1:num_dims, -buff_size_lb(1) + 0:m + buff_size_lb(2), &
+            -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+            -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+
+        @:ALLOCATE(E_src(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+            -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+            -buff_size_lb(5) + 0:p + buff_size_lb(6)))
     end subroutine s_initialize_acoustic_src
 
     !> This subroutine updates the rhs by computing the mass, mom, energy sources

@@ -1734,7 +1734,9 @@ contains
     subroutine s_initialize_data_output_module
 
         ! Allocating/initializing ICFL, VCFL, CCFL and Rc stability criteria
-        @:ALLOCATE(icfl_sf(0:m, 0:n, 0:p))
+        @:ALLOCATE(icfl_sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+            -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+            -buff_size_lb(5) + 0:p + buff_size_lb(6)))
         icfl_max = 0._wp
 
         if (probe_wrt) then
@@ -1742,8 +1744,12 @@ contains
         end if
 
         if (viscous) then
-            @:ALLOCATE(vcfl_sf(0:m, 0:n, 0:p))
-            @:ALLOCATE(Rc_sf  (0:m, 0:n, 0:p))
+            @:ALLOCATE(vcfl_sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+            @:ALLOCATE(Rc_sf  (-buff_size_lb(1) + 0:m + buff_size_lb(2), &
+                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
 
             vcfl_max = 0._wp
             Rc_min = 1e3_wp

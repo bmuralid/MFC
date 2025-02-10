@@ -25,6 +25,7 @@ module m_variables_conversion
         num_species, get_temperature, get_pressure, gas_constant, &
         get_mixture_molecular_weight, get_mixture_energy_mass
 
+    use iso_c_binding
     implicit none
 
     private; 
@@ -64,7 +65,12 @@ module m_variables_conversion
     real(wp), allocatable, dimension(:, :, :), public :: gamma_sf !< Scalar sp. heat ratio function
     real(wp), allocatable, dimension(:, :, :), public :: pi_inf_sf !< Scalar liquid stiffness function
     real(wp), allocatable, dimension(:, :, :), public :: qv_sf !< Scalar liquid energy reference function
-
+    interface 
+        subroutine c_sleep(microsec) bind(C, name="usleep")
+            import :: c_int
+            integer(c_int), value :: microsec
+        end subroutine c_sleep
+    end interface
 contains
 
     !> Dispatch to the s_convert_mixture_to_mixture_variables
@@ -151,6 +157,10 @@ contains
                        (energy/ &
                         (rhoref*(1 - alf)) &
                         )**(1/gamma + 1) - pi_inf
+            end if
+            !> Uncomment to introduce load imbalance
+            if (rho > 2.0 ) then
+                call c_sleep(300)
             end if
 
             if (hypoelasticity .and. present(G)) then

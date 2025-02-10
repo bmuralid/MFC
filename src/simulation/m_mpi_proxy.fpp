@@ -28,6 +28,7 @@ module m_mpi_proxy
 
     use m_nvtx
 
+    use m_load_balance
     use ieee_arithmetic
 
     implicit none
@@ -155,7 +156,93 @@ contains
 
     end subroutine s_initialize_mpi_proxy_module
 
-    !>  Since only the processor with rank 0 reads and verifies
+    subroutine s_reinitialize_mpi_proxy_module
+
+#ifdef MFC_MPI
+
+        ! Allocating q_cons_buff_send/recv and ib_buff_send/recv. Please note that
+        ! for the sake of simplicity, both variables are provided sufficient
+        ! storage to hold the largest buffer in the computational domain.
+
+        if (qbmm .and. .not. polytropic) then
+            if (n > 0) then
+                if (p > 0) then
+                    @:DEALLOCATE(q_cons_buff_send)
+                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (m + 2*buff_size  +1)* &
+                                             & (n + 2*buff_size  +1)* &
+                                             & (p + 2*buff_size  +1)/ &
+                                             & (min(m, n, p) + 2*(buff_size  &
+                                             ) + 1)))
+                else
+                    @:DEALLOCATE(q_cons_buff_send)
+                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (max(m, n) + 2*(buff_size ) + 1)))
+                end if
+            else
+                @:DEALLOCATE(q_cons_buff_send)
+                @:ALLOCATE(q_cons_buff_send(0:-1 + (buff_size + sys_size + 2*nb*4)))
+            end if
+
+            @:DEALLOCATE(q_cons_buff_recv)
+            @:ALLOCATE(q_cons_buff_recv(0:ubound(q_cons_buff_send, 1)))
+
+            v_size = sys_size + 2*nb*4
+        else
+            if (n > 0) then
+                if (p > 0) then
+                    @:DEALLOCATE(q_cons_buff_send)
+                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*sys_size* &
+                                             & (m + 2*buff_size  +1)* &
+                                             & (n + 2*buff_size  +1)* &
+                                             & (p + 2*buff_size  +1)/ &
+                                             & (min(m, n, p) + 2*(buff_size  &
+                                             ) + 1)))
+                else
+                    @:DEALLOCATE(q_cons_buff_send)
+                    @:ALLOCATE(q_cons_buff_send(0:-1 + (buff_size ) *sys_size* &
+                                             & (max(m, n) + 2*(buff_size ) + 1)))
+                end if
+            else
+                @:DEALLOCATE(q_cons_buff_send)
+                @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*sys_size))
+            end if
+            @:DEALLOCATE(q_cons_buff_recv)
+            @:ALLOCATE(q_cons_buff_recv(0:ubound(q_cons_buff_send, 1)))
+
+            v_size = sys_size
+        end if
+
+        if (surface_tension) then
+            nVars = num_dims + 1
+            if (n > 0) then
+                if (p > 0) then
+                    @:DEALLOCATE(c_divs_buff_send)
+                    @:ALLOCATE(c_divs_buff_send(0:-1 + buff_size*(num_dims+1)* &
+                                             & (m + 2*buff_size  +1)* &
+                                             & (n + 2*buff_size  +1)* &
+                                             & (p + 2*buff_size  +1)/ &
+                                             & (min(m, n, p) + 2*(buff_size  &
+                                             ) + 1)))
+                else
+                    @:DEALLOCATE(c_divs_buff_send)
+                    @:ALLOCATE(c_divs_buff_send(0:-1 + buff_size*(num_dims+1)* &
+                                             & (max(m, n) + 2*(buff_size ) + 1)))
+                end if
+            else
+                @:DEALLOCATE(c_divs_buff_send)
+                @:ALLOCATE(c_divs_buff_send(0:-1 + buff_size*(num_dims+1)))
+            end if
+
+            @:DEALLOCATE(c_divs_buff_recv)
+            @:ALLOCATE(c_divs_buff_recv(0:ubound(c_divs_buff_send, 1)))
+        end if
+        !$acc update device(v_size, nVars)
+
+#endif
+
+    end subroutine s_reinitialize_mpi_proxy_module
+     !>  Since only the processor with rank 0 reads and verifies
         !!      the consistency of user inputs, these are initially not
         !!      available to the other processors. Then, the purpose of
         !!      this subroutine is to distribute the user inputs to the
@@ -304,6 +391,7 @@ contains
             #:endfor
         end do
 
+        call MPI_BCAST(buff_size_lb, 6, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
 #endif
 
     end subroutine s_mpi_bcast_user_inputs
@@ -318,7 +406,6 @@ contains
 
 #ifdef MFC_MPI
 
-        integer :: num_procs_x, num_procs_y, num_procs_z !<
             !! Optimal number of processors in the x-, y- and z-directions
 
         real(wp) :: tmp_num_procs_x, tmp_num_procs_y, tmp_num_procs_z !<
@@ -517,14 +604,19 @@ contains
                         start_idx(3) = (p + 1)*proc_coords(3) + rem_cells
                     end if
                 end if
+                call MPI_ALLGATHER(p, 1, MPI_INTEGER, proc_counts_z, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
 
+                call MPI_ALLGATHER(proc_coords(3), 1, MPI_INTEGER, proc_coords_z, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+               ! ==================================================================
                 ! 2D Cartesian Processor Topology
             else
 
                 ! Initial estimate of optimal processor topology
                 num_procs_x = 1
                 num_procs_y = num_procs
+                num_procs_z = 1
                 ierr = -1
+                proc_coords_z = 0
 
                 ! Benchmarking the quality of this initial guess
                 tmp_num_procs_x = num_procs_x
@@ -620,12 +712,19 @@ contains
                     start_idx(2) = (n + 1)*proc_coords(2) + rem_cells
                 end if
             end if
+            call MPI_ALLGATHER(n, 1, MPI_INTEGER, proc_counts_y, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+            ! ==================================================================
 
+            call MPI_ALLGATHER(proc_coords(2), 1, MPI_INTEGER, proc_coords_y, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
             ! 1D Cartesian Processor Topology
         else
 
             ! Optimal processor topology
             num_procs_x = num_procs
+            num_procs_y = 1
+            num_procs_z = 1
+            proc_coords_y = 0
+            proc_coords_z = 0
 
             ! Creating new communicator using the Cartesian topology
             call MPI_CART_CREATE(MPI_COMM_WORLD, 1, (/num_procs_x/), &
@@ -674,7 +773,10 @@ contains
                 start_idx(1) = (m + 1)*proc_coords(1) + rem_cells
             end if
         end if
+        call MPI_ALLGATHER(m, 1, MPI_INTEGER, proc_counts_x, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
 
+        call MPI_ALLGATHER(proc_coords(1), 1, MPI_INTEGER, proc_coords_x, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+        call s_mpi_loadbalance_init()
 #endif
 
     end subroutine s_mpi_decompose_computational_domain

@@ -132,7 +132,7 @@ contains
             is2%beg = 0
 
         else
-            is2%beg = -buff_size
+            is2%beg = -buff_size - buff_size_lb(3)
         end if
 
         is2%end = n - is2%beg
@@ -141,7 +141,7 @@ contains
             is3%beg = 0
 
         else
-            is3%beg = -buff_size
+            is3%beg = -buff_size- buff_size_lb(5)
         end if
         is3%end = p - is3%beg
 
@@ -175,7 +175,7 @@ contains
                 is2%beg = 0
 
             else
-                is2%beg = -buff_size
+                is2%beg = -buff_size - buff_size_lb(3)
             end if
 
             is2%end = m - is2%beg
@@ -184,7 +184,7 @@ contains
                 is3%beg = 0
 
             else
-                is3%beg = -buff_size
+                is3%beg = -buff_size - buff_size_lb(5)
             end if
             is3%end = p - is3%beg
 
@@ -220,7 +220,7 @@ contains
                 is2%beg = 0
 
             else
-                is2%beg = -buff_size
+                is2%beg = -buff_size - buff_size_lb(3)
             end if
 
             is2%end = n - is2%beg
@@ -229,7 +229,7 @@ contains
                 is3%beg = 0
 
             else
-                is3%beg = -buff_size
+                is3%beg = -buff_size - buff_size_lb(5)
             end if
             is3%end = m - is3%beg
 
