@@ -159,6 +159,7 @@ contains
         real(wp), dimension(startx:, starty:, startz:, 1:), intent(INOUT) :: qL_prim_rsx_vf, qR_prim_rsx_vf
         real(wp), dimension(starty:, startx:, startz:, 1:), intent(INOUT) :: qL_prim_rsy_vf, qR_prim_rsy_vf
         real(wp), dimension(startz:, starty:, startx:, 1:), intent(INOUT) :: qL_prim_rsz_vf, qR_prim_rsz_vf
+        ! real(wp), dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:), intent(INOUT) :: qL_prim_rsx_vf, qL_prim_rsy_vf, qL_prim_rsz_vf, qR_prim_rsx_vf, qR_prim_rsy_vf, qR_prim_rsz_vf
         type(scalar_field), dimension(sys_size), intent(IN) :: q_prim_vf
 
         type(scalar_field), allocatable, dimension(:), intent(INOUT) :: qL_prim_vf, qR_prim_vf
@@ -282,6 +283,7 @@ contains
         real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: qL_prim_rsx_vf, qR_prim_rsx_vf
         real(wp), dimension(starty:, startx:, startz:, 1:), intent(inout) :: qL_prim_rsy_vf, qR_prim_rsy_vf
         real(wp), dimension(startz:, starty:, startx:, 1:), intent(inout) :: qL_prim_rsz_vf, qR_prim_rsz_vf
+        ! real(wp), dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:), intent(inout) :: qL_prim_rsx_vf, qL_prim_rsy_vf, qL_prim_rsz_vf, qR_prim_rsx_vf, qR_prim_rsy_vf, qR_prim_rsz_vf
         type(scalar_field), dimension(sys_size), intent(in) :: q_prim_vf
 
         type(scalar_field), allocatable, dimension(:), intent(inout) :: qL_prim_vf, qR_prim_vf
@@ -974,6 +976,7 @@ contains
         real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: qL_prim_rsx_vf, qR_prim_rsx_vf
         real(wp), dimension(starty:, startx:, startz:, 1:), intent(inout) :: qL_prim_rsy_vf, qR_prim_rsy_vf
         real(wp), dimension(startz:, starty:, startx:, 1:), intent(inout) :: qL_prim_rsz_vf, qR_prim_rsz_vf
+        ! real(wp), dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:), intent(inout) :: qL_prim_rsx_vf, qL_prim_rsy_vf, qL_prim_rsz_vf, qR_prim_rsx_vf, qR_prim_rsy_vf, qR_prim_rsz_vf
         type(scalar_field), dimension(sys_size), intent(in) :: q_prim_vf
         type(scalar_field), allocatable, dimension(:), intent(inout) :: qL_prim_vf, qR_prim_vf
 
@@ -2909,7 +2912,7 @@ contains
         qR_prim_vf, &
         norm_dir, ix, iy, iz)
 
-        real(wp), dimension(startx:, starty:, startz:, 1:), intent(inout) :: qL_prim_rsx_vf, qL_prim_rsy_vf, qL_prim_rsz_vf, qR_prim_rsx_vf, qR_prim_rsy_vf, qR_prim_rsz_vf
+        real(wp), dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:), intent(inout) :: qL_prim_rsx_vf, qL_prim_rsy_vf, qL_prim_rsz_vf, qR_prim_rsx_vf, qR_prim_rsy_vf, qR_prim_rsz_vf
 
         type(scalar_field), &
             allocatable, dimension(:), &

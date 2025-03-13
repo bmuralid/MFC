@@ -1118,41 +1118,35 @@ contains
         Np = 0
 
         !$acc update device(Re_size)
-        ! Determining the number of cells that are needed in order to store
-        ! sufficient boundary conditions data as to iterate the solution in
-        ! the physical computational domain from one time-step iteration to
-        ! the next one
-        if (viscous) then
-            buff_size = 2*weno_polyn + 2
-        else
-            buff_size = weno_polyn + 2
-        end if
 
         if (elasticity) then
             fd_number = max(1, fd_order/2)
-            !buff_size = buff_size + fd_number
         end if
 
         if (probe_wrt) then
             fd_number = max(1, fd_order/2)
         end if
 
-        ! Correction for smearing function in the lagrangian subgrid bubble model
-        if (bubbles_lagrange) then
-            buff_size = max(buff_size, 6)
-        end if
+        ! ! Correction for smearing function in the lagrangian subgrid bubble model
+        ! if (bubbles_lagrange) then
+        !     buff_size = max(buff_size, 6)
+        ! end if
 
-        ! Configuring Coordinate Direction Indexes
-        idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
-        idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
+        ! ! Configuring Coordinate Direction Indexes
+        ! idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
+        ! idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
 
-        idwbuff(1)%beg = -buff_size - buff_size_lb(1)
-        if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
-        if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
+        ! idwbuff(1)%beg = -buff_size - buff_size_lb(1)
+        ! if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
+        ! if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
 
-        idwbuff(1)%end = idwint(1)%end - idwbuff(1)%beg
-        idwbuff(2)%end = idwint(2)%end - idwbuff(2)%beg
-        idwbuff(3)%end = idwint(3)%end - idwbuff(3)%beg
+        ! idwbuff(1)%end = idwint(1)%end - idwbuff(1)%beg
+        ! idwbuff(2)%end = idwint(2)%end - idwbuff(2)%beg
+        ! idwbuff(3)%end = idwint(3)%end - idwbuff(3)%beg
+        call s_configure_coordinate_bounds(weno_polyn, buff_size, &
+                                           idwint, idwbuff, viscous, &
+                                           bubbles_lagrange, m, n, p, &
+                                           num_dims)
         !$acc update device(idwint, idwbuff)
 
         ! Configuring Coordinate Direction Indexes
@@ -1174,7 +1168,6 @@ contains
         end if
 
         !$acc update device(fd_order,fd_number)
-        !$acc update device(startx, starty, startz)
 
         if (cyl_coord .neqv. .true.) then ! Cartesian grid
             grid_geometry = 1
