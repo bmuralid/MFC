@@ -158,10 +158,10 @@ contains
                         (rhoref*(1 - alf)) &
                         )**(1/gamma + 1) - pi_inf
             end if
-            !> Uncomment to introduce load imbalance
-            if (rho > 2.0 ) then
-                call c_sleep(300)
-            end if
+            !!> Uncomment to introduce load imbalance
+            !if (rho > 2.0 ) then
+            !    call c_sleep(300)
+            !end if
 
             if (hypoelasticity .and. present(G)) then
                 ! calculate elastic contribution to Energy

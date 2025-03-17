@@ -17,7 +17,7 @@ module m_boundary_conditions
     implicit none
 
 #ifdef MFC_SIMULATION
-    private; public :: s_populate_variables_buffers, s_populate_capillary_buffers
+    private; public :: s_populate_variables_buffers, s_populate_capillary_buffers, s_repopulate_variables_buffers
 #else
     private; public :: s_populate_variables_buffers
 #endif
@@ -215,7 +215,7 @@ contains
     subroutine s_repopulate_variables_buffers(q_prim_vf, pb, mv)
 
         type(scalar_field), dimension(sys_size), intent(inout) :: q_prim_vf
-        real(wp), dimension(startx:, starty:, startz:, 1:, 1:), intent(inout) :: pb, mv
+        real(wp), dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:, 1:), intent(inout) :: pb, mv
 
         integer :: bc_loc, bc_dir
 

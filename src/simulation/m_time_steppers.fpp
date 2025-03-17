@@ -404,12 +404,6 @@ contains
                 !$acc enter data attach(q_prim_vf(i)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(i))
             end do
-            !$acc exit data detach(q_prim_vf(T_idx)%sf)
-            q_T_sf%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) => q_T_sf%sf
-            !$acc enter data attach(q_prim_vf(T_idx)%sf)
-            ! @:ACC_SETUP_SFs(q_prim_vf(T_idx))
         end if
 
         !Initialize bubble variables pb and mv at all quadrature nodes for all R0 bins

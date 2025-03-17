@@ -1127,26 +1127,22 @@ contains
             fd_number = max(1, fd_order/2)
         end if
 
-        ! ! Correction for smearing function in the lagrangian subgrid bubble model
-        ! if (bubbles_lagrange) then
-        !     buff_size = max(buff_size, 6)
-        ! end if
-
-        ! ! Configuring Coordinate Direction Indexes
-        ! idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
-        ! idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
-
-        ! idwbuff(1)%beg = -buff_size - buff_size_lb(1)
-        ! if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
-        ! if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
-
-        ! idwbuff(1)%end = idwint(1)%end - idwbuff(1)%beg
-        ! idwbuff(2)%end = idwint(2)%end - idwbuff(2)%beg
-        ! idwbuff(3)%end = idwint(3)%end - idwbuff(3)%beg
         call s_configure_coordinate_bounds(weno_polyn, buff_size, &
                                            idwint, idwbuff, viscous, &
                                            bubbles_lagrange, m, n, p, &
                                            num_dims)
+        ! LB correction                               
+        idwbuff(1)%beg = idwbuff(1)%beg - buff_size_lb(1)
+        idwbuff(1)%end = idwbuff(1)%end + buff_size_lb(2)
+        if (num_dims > 1) then
+            idwbuff(2)%beg = idwbuff(2)%beg - buff_size_lb(3)
+            idwbuff(2)%end = idwbuff(2)%end + buff_size_lb(4)
+            if (num_dims > 2) then
+                idwbuff(3)%beg = idwbuff(3)%beg - buff_size_lb(5)
+                idwbuff(3)%end = idwbuff(3)%end + buff_size_lb(6)
+            end if
+        end if
+
         !$acc update device(idwint, idwbuff)
 
         ! Configuring Coordinate Direction Indexes
@@ -1250,24 +1246,20 @@ contains
         endif
         !$acc update device(buff_size_lb)
 
-        ! Configuring Coordinate Direction Indexes =========================
-        idwint(1)%beg = 0; idwint(2)%beg = 0; idwint(3)%beg = 0
-        idwint(1)%end = m; idwint(2)%end = n; idwint(3)%end = p
-
-        idwbuff(1)%beg = -buff_size - buff_size_lb(1)
-        if (num_dims > 1) then; idwbuff(2)%beg = -buff_size - buff_size_lb(3); else; idwbuff(2)%beg = 0; end if
-        if (num_dims > 2) then; idwbuff(3)%beg = -buff_size - buff_size_lb(5); else; idwbuff(3)%beg = 0; end if
-
-        idwbuff(1)%end = idwint(1)%end + buff_size + buff_size_lb(2)
+        call s_configure_coordinate_bounds(weno_polyn, buff_size, &
+                                           idwint, idwbuff, viscous, &
+                                           bubbles_lagrange, m, n, p, &
+                                           num_dims)
+        ! LB correction                               
+        idwbuff(1)%beg = idwbuff(1)%beg - buff_size_lb(1)
+        idwbuff(1)%end = idwbuff(1)%end + buff_size_lb(2)
         if (num_dims > 1) then
-            idwbuff(2)%end = idwint(2)%end + buff_size + buff_size_lb(4)
-        else
-            idwbuff(2)%end = idwint(2)%end
-        end if
-        if (num_dims > 2) then
-            idwbuff(3)%end = idwint(3)%end + buff_size + buff_size_lb(6)
-        else
-            idwbuff(3)%end = idwint(3)%end
+            idwbuff(2)%beg = idwbuff(2)%beg - buff_size_lb(3)
+            idwbuff(2)%end = idwbuff(2)%end + buff_size_lb(4)
+            if (num_dims > 2) then
+                idwbuff(3)%beg = idwbuff(3)%beg - buff_size_lb(5)
+                idwbuff(3)%end = idwbuff(3)%end + buff_size_lb(6)
+            end if
         end if
         !$acc update device(idwint, idwbuff)
         ! ==================================================================

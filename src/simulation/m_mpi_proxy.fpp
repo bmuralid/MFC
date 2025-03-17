@@ -100,60 +100,6 @@ contains
     subroutine s_reinitialize_mpi_proxy_module
 
 #ifdef MFC_MPI
-
-        ! Allocating q_cons_buff_send/recv and ib_buff_send/recv. Please note that
-        ! for the sake of simplicity, both variables are provided sufficient
-        ! storage to hold the largest buffer in the computational domain.
-
-        if (qbmm .and. .not. polytropic) then
-            if (n > 0) then
-                if (p > 0) then
-                    @:DEALLOCATE(q_cons_buff_send)
-                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
-                                             & (m + 2*buff_size  +1)* &
-                                             & (n + 2*buff_size  +1)* &
-                                             & (p + 2*buff_size  +1)/ &
-                                             & (min(m, n, p) + 2*(buff_size  &
-                                             ) + 1)))
-                else
-                    @:DEALLOCATE(q_cons_buff_send)
-                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
-                                             & (max(m, n) + 2*(buff_size ) + 1)))
-                end if
-            else
-                @:DEALLOCATE(q_cons_buff_send)
-                @:ALLOCATE(q_cons_buff_send(0:-1 + (buff_size + sys_size + 2*nb*4)))
-            end if
-
-            @:DEALLOCATE(q_cons_buff_recv)
-            @:ALLOCATE(q_cons_buff_recv(0:ubound(q_cons_buff_send, 1)))
-
-            v_size = sys_size + 2*nb*4
-        else
-            if (n > 0) then
-                if (p > 0) then
-                    @:DEALLOCATE(q_cons_buff_send)
-                    @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*sys_size* &
-                                             & (m + 2*buff_size  +1)* &
-                                             & (n + 2*buff_size  +1)* &
-                                             & (p + 2*buff_size  +1)/ &
-                                             & (min(m, n, p) + 2*(buff_size  &
-                                             ) + 1)))
-                else
-                    @:DEALLOCATE(q_cons_buff_send)
-                    @:ALLOCATE(q_cons_buff_send(0:-1 + (buff_size ) *sys_size* &
-                                             & (max(m, n) + 2*(buff_size ) + 1)))
-                end if
-            else
-                @:DEALLOCATE(q_cons_buff_send)
-                @:ALLOCATE(q_cons_buff_send(0:-1 + buff_size*sys_size))
-            end if
-            @:DEALLOCATE(q_cons_buff_recv)
-            @:ALLOCATE(q_cons_buff_recv(0:ubound(q_cons_buff_send, 1)))
-
-            v_size = sys_size
-        end if
-
         if (surface_tension) then
             nVars = num_dims + 1
             if (n > 0) then
