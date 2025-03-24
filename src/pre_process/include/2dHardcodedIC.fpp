@@ -133,9 +133,9 @@
         r = dsqrt(x_cc(i)**2 + y_cc(j)**2)
         q_prim_vf(E_idx)%sf(i, j, 0) = 0.67e-4_wp
         q_prim_vf(contxb)%sf(i, j, 0) = 1.0_wp
-        if ( r < 0.007_wp) then
+        if (r < 0.007_wp) then
             q_prim_vf(E_idx)%sf(i, j, 0) = 1.85e6_wp
-        endif
+        end if
     case default
         if (proc_rank == 0) then
             call s_int_to_str(patch_id, iStr)
