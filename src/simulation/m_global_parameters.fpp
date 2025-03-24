@@ -33,7 +33,7 @@ module m_global_parameters
     integer :: num_procs             !< Number of processors
     #:for dir in {'x', 'y', 'z'}
         integer :: num_procs_${dir}$ !< Number of processors in the ${dir}$-direction
-    #:endfor    
+    #:endfor
     character(LEN=path_len) :: case_dir              !< Case folder location
     logical :: run_time_info         !< Run-time output flag
     integer :: t_step_old            !< Existing IC/grid folder
@@ -209,7 +209,7 @@ module m_global_parameters
     !! Load factor for each processor
 
     integer, allocatable, dimension(:) :: proc_counts_x, proc_counts_y, proc_counts_z !<
- 
+
     !! Number of cells in each direction for each processor
 
     type(mpi_io_var), public :: MPI_IO_DATA
@@ -1081,22 +1081,22 @@ contains
         !$acc update device(buff_size_lb)
         do i = 1, sys_size
             allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                            -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                            -buff_size_lb(5) + 0:p + buff_size_lb(6)))
             MPI_IO_DATA%var(i)%sf => null()
         end do
         if (bubbles_euler .and. qbmm .and. .not. polytropic) then
             do i = sys_size + 1, sys_size + 2*nb*4
                 allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                    -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                    -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 MPI_IO_DATA%var(i)%sf => null()
             end do
         elseif (bubbles_lagrange) then
             do i = 1, sys_size + 1
                 allocate (MPI_IO_DATA%var(i)%sf(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                    -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                    -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 MPI_IO_DATA%var(i)%sf => null()
             end do
         end if
@@ -1131,7 +1131,7 @@ contains
                                            idwint, idwbuff, viscous, &
                                            bubbles_lagrange, m, n, p, &
                                            num_dims)
-        ! LB correction                               
+        ! LB correction
         idwbuff(1)%beg = idwbuff(1)%beg - buff_size_lb(1)
         idwbuff(1)%end = idwbuff(1)%end + buff_size_lb(2)
         if (num_dims > 1) then
@@ -1232,25 +1232,25 @@ contains
         integer :: i, j, k
         integer :: fac
 
-         ! update the global variable buff_size_lb
+        ! update the global variable buff_size_lb
         buff_size_lb(1) = buff_size_lb(1) + diff_start_idx(1)
-        buff_size_lb(2) = buff_size_lb(2)  - diff_count_idx(1) - diff_start_idx(1)
+        buff_size_lb(2) = buff_size_lb(2) - diff_count_idx(1) - diff_start_idx(1)
         if (n > 0) then
             buff_size_lb(3) = buff_size_lb(3) + diff_start_idx(2)
-            buff_size_lb(4) = buff_size_lb(4)  - diff_count_idx(2) - diff_start_idx(2)
-        endif
+            buff_size_lb(4) = buff_size_lb(4) - diff_count_idx(2) - diff_start_idx(2)
+        end if
 
         if (p > 0) then
             buff_size_lb(5) = buff_size_lb(5) + diff_start_idx(3)
-            buff_size_lb(6) = buff_size_lb(6)  - diff_count_idx(3) - diff_start_idx(3)
-        endif
+            buff_size_lb(6) = buff_size_lb(6) - diff_count_idx(3) - diff_start_idx(3)
+        end if
         !$acc update device(buff_size_lb)
 
         call s_configure_coordinate_bounds(weno_polyn, buff_size, &
                                            idwint, idwbuff, viscous, &
                                            bubbles_lagrange, m, n, p, &
                                            num_dims)
-        ! LB correction                               
+        ! LB correction
         idwbuff(1)%beg = idwbuff(1)%beg - buff_size_lb(1)
         idwbuff(1)%end = idwbuff(1)%end + buff_size_lb(2)
         if (num_dims > 1) then
@@ -1282,13 +1282,13 @@ contains
         ! @:ALLOCATE(x_cc(-buff_size - buff_size_lb(1) :m + buff_size + buff_size_lb(2)))
         ! @:ALLOCATE(dx(-buff_size - buff_size_lb(1):m + buff_size + buff_size_lb(2)))
 
-        ! if (n == 0) return; 
+        ! if (n == 0) return;
         ! @:DEALLOCATE(y_cb, y_cc, dy)
         ! @:ALLOCATE(y_cb(-1 - buff_size - buff_size_lb(3):n + buff_size + buff_size_lb(4)))
         ! @:ALLOCATE(y_cc(-buff_size -buff_size_lb(3):n + buff_size + buff_size_lb(4)))
         ! @:ALLOCATE(dy(-buff_size - buff_size_lb(3):n + buff_size +  buff_size_lb(4)))
 
-        ! if (p == 0) return; 
+        ! if (p == 0) return;
         ! @:DEALLOCATE(z_cb, z_cc, dz)
         ! @:ALLOCATE(z_cb(-1 - buff_size -buff_size_lb(5):p + buff_size + buff_size_lb(6)))
         ! @:ALLOCATE(z_cc(-buff_size - buff_size_lb(5):p + buff_size + buff_size_lb(6)))
@@ -1305,13 +1305,13 @@ contains
         allocate (proc_coords(1:num_dims))
 
         #:for dir in {'x', 'y', 'z'}
-            allocate ( proc_coords_${dir}$(1:num_procs) )
+            allocate (proc_coords_${dir}$ (1:num_procs))
         #:endfor
 
-        ! allocate (load_factor(1:num_procs)) 
+        ! allocate (load_factor(1:num_procs))
 
         #:for dir in {'x', 'y', 'z'}
-            allocate (proc_counts_${dir}$(1:num_procs))
+            allocate (proc_counts_${dir}$ (1:num_procs))
         #:endfor
 
         if (parallel_io .neqv. .true.) return
@@ -1356,7 +1356,7 @@ contains
             deallocate (proc_coords_${dir}$)
             deallocate (proc_counts_${dir}$)
         #:endfor
-         if (parallel_io) then
+        if (parallel_io) then
             deallocate (start_idx)
             deallocate (diff_start_idx)
             deallocate (diff_count_idx)

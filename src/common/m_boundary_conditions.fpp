@@ -222,40 +222,40 @@ contains
         if (bc_x%beg > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 1, -1)
-        endif
+        end if
 
         if (bc_x%end > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 1, 1)
-        endif
+        end if
 
         if (n == 0) return
 
         if (bc_y%beg > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 2, -1)
-        endif
+        end if
 
         if (bc_y%end > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 2, 1)
-        endif
+        end if
 
         if (p == 0) return
 
         if (bc_z%beg > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 3, -1)
-        endif
+        end if
 
         if (bc_z%end > -3) then
             call s_mpi_sendrecv_variables_buffers( &
                 q_prim_vf, pb, mv, 3, 1)
-        endif
+        end if
 
     end subroutine s_repopulate_variables_buffers
 
-     subroutine s_ghost_cell_extrapolation(q_prim_vf, pb, mv, bc_dir, bc_loc)
+    subroutine s_ghost_cell_extrapolation(q_prim_vf, pb, mv, bc_dir, bc_loc)
 
         type(scalar_field), dimension(sys_size), intent(inout) :: q_prim_vf
         real(wp), optional, dimension(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:, 1:, 1:), intent(inout) :: pb, mv

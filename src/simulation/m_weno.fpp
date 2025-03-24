@@ -31,7 +31,7 @@ module m_weno
     use m_mpi_proxy
 
     private; public :: s_initialize_weno_module, s_initialize_weno, s_finalize_weno_module, s_weno, &
-        s_reinitialize_weno_module
+ s_reinitialize_weno_module
 
     !> @name The cell-average variables that will be WENO-reconstructed. Formerly, they
     !! are stored in v_vf. However, they are transferred to v_rs_wsL and v_rs_wsR
@@ -210,13 +210,13 @@ contains
         if (weno_order == 1) return
 
         ! Allocating/Computing WENO Coefficients in x-direction ============
-        is1_weno%beg = -buff_size; is1_weno%end = m + buff_size 
+        is1_weno%beg = -buff_size; is1_weno%end = m + buff_size
         if (n == 0) then
             is2_weno%beg = 0
             is2_weno%end = n - is2_weno%beg
         else
             is2_weno%beg = -buff_size
-            is2_weno%end = n + buff_size 
+            is2_weno%end = n + buff_size
         end if
 
         if (p == 0) then
@@ -224,7 +224,7 @@ contains
             is3_weno%end = p - is3_weno%beg
         else
             is3_weno%beg = -buff_size
-            is3_weno%end = p + buff_size 
+            is3_weno%end = p + buff_size
         end if
 
         @:DEALLOCATE(poly_coef_cbL_x, poly_coef_cbR_x)
@@ -238,7 +238,6 @@ contains
 
         @:ALLOCATE(d_cbL_x(0:weno_num_stencils, is1_weno%beg + weno_polyn:is1_weno%end - weno_polyn))
         @:ALLOCATE(d_cbR_x(0:weno_num_stencils, is1_weno%beg + weno_polyn:is1_weno%end - weno_polyn))
-
 
         @:ALLOCATE(beta_coef_x(is1_weno%beg + weno_polyn:is1_weno%end - weno_polyn, 0:weno_polyn, &
             0:weno_polyn*(weno_polyn + 1)/2 - 1))

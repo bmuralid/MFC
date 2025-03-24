@@ -2794,7 +2794,7 @@ contains
         !$acc enter data copyin(is1, is2, is3, isx, isy, isz)
 
         is1%beg = -1 - buff_size_lb(1); is2%beg = 0 - buff_size_lb(3); is3%beg = 0 - buff_size_lb(5)
-        is1%end = m + buff_size_lb(2) ; is2%end = n + buff_size_lb(4); is3%end = p + buff_size_lb(6)
+        is1%end = m + buff_size_lb(2); is2%end = n + buff_size_lb(4); is3%end = p + buff_size_lb(6)
 
         @:ALLOCATE(flux_rsx_vf(is1%beg:is1%end, &
             is2%beg:is2%end, &
@@ -2820,7 +2820,7 @@ contains
 
         if (n == 0) return
 
-        is1%beg = -1 - buff_size_lb(3) ; is2%beg = 0 - buff_size_lb(1); is3%beg = 0 - buff_size_lb(5)
+        is1%beg = -1 - buff_size_lb(3); is2%beg = 0 - buff_size_lb(1); is3%beg = 0 - buff_size_lb(5)
         is1%end = n + buff_size_lb(4); is2%end = m + buff_size_lb(2); is3%end = p + buff_size_lb(6)
 
         @:ALLOCATE(flux_rsy_vf(is1%beg:is1%end, &
