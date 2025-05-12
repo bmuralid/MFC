@@ -141,7 +141,7 @@ contains
             is3%beg = 0
 
         else
-            is3%beg = -buff_size- buff_size_lb(5)
+            is3%beg = -buff_size - buff_size_lb(5)
         end if
         is3%end = p - is3%beg
 

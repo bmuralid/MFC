@@ -559,22 +559,22 @@ contains
         ! END: Allocation/Association of flux_n, flux_src_n, and flux_gsrc_n
 
         if (alt_soundspeed) then
-            @:ALLOCATE(blkmod1(-buff_size_lb(1) + 0:m + buff_size_lb(2), & 
+            @:ALLOCATE(blkmod1(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
                 -buff_size_lb(3) + 0:n + buff_size_lb(4), &
                 -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
                 blkmod2(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
+                        -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                        -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
                 alpha1(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
+                       -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                       -buff_size_lb(5) + 0:p + buff_size_lb(6)), &
                 alpha2(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)),&
+                       -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                       -buff_size_lb(5) + 0:p + buff_size_lb(6)),&
                 Kterm(-buff_size_lb(1)+ 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
-         end if
+                      -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                      -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+        end if
 
         @:ALLOCATE(gamma_min(1:num_fluids), pres_inf(1:num_fluids))
 
@@ -630,17 +630,17 @@ contains
             !$acc update host(q_cons_qp%vf(l)%sf)
             !$acc exit data detach(q_cons_qp%vf(l)%sf)
             q_cons_qp%vf(l)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) =>  q_cons_qp%vf(l)%sf
+                               idwbuff(2)%beg:, &
+                               idwbuff(3)%beg:) => q_cons_qp%vf(l)%sf
             !$acc enter data attach(q_cons_qp%vf(l)%sf)
             !$acc update device(q_cons_qp%vf(l)%sf)
         end do
 
         do l = mom_idx%beg, E_idx
             !$acc exit data detach(q_prim_qp%vf(l)%sf)
-            q_prim_qp%vf(l)%sf(idwbuff(1)%beg:,  &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) =>  q_prim_qp%vf(l)%sf
+            q_prim_qp%vf(l)%sf(idwbuff(1)%beg:, &
+                               idwbuff(2)%beg:, &
+                               idwbuff(3)%beg:) => q_prim_qp%vf(l)%sf
             !$acc enter data attach(q_prim_qp%vf(l)%sf)
         end do
 
@@ -648,14 +648,14 @@ contains
             do l = adv_idx%end + 1, sys_size - 1
                 !$acc exit data detach(q_prim_qp%vf(l)%sf)
                 q_prim_qp%vf(l)%sf(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:) => &
-                q_prim_qp%vf(l)%sf
+                    q_prim_qp%vf(l)%sf
                 !$acc enter data attach(q_prim_qp%vf(l)%sf)
             end do
         else
             do l = adv_idx%end + 1, sys_size
                 !$acc exit data detach(q_prim_qp%vf(l)%sf)
                 q_prim_qp%vf(l)%sf(idwbuff(1)%beg:, idwbuff(2)%beg:, idwbuff(3)%beg:) => &
-                q_prim_qp%vf(l)%sf
+                    q_prim_qp%vf(l)%sf
                 !$acc enter data attach(q_prim_qp%vf(l)%sf)
             end do
 
@@ -685,8 +685,8 @@ contains
             do i = 1, num_dims
                 !$acc exit data detach(tau_Re_vf(cont_idx%end + i)%sf)
                 tau_Re_vf(cont_idx%end + i)%sf(idwbuff(1)%beg:, &
-                                                idwbuff(2)%beg:, &
-                                                idwbuff(3)%beg:) => tau_Re_vf(cont_idx%end + i)%sf
+                                               idwbuff(2)%beg:, &
+                                               idwbuff(3)%beg:) => tau_Re_vf(cont_idx%end + i)%sf
                 !$acc enter data attach(tau_Re_vf(cont_idx%end + i)%sf)
                 ! @:ACC_SETUP_SFs(tau_Re_vf(cont_idx%end + i))
             end do
@@ -729,11 +729,11 @@ contains
                 !$acc exit data detach(qL_prim(i)%vf(l)%sf)
                 !$acc exit data detach(qR_prim(i)%vf(l)%sf)
                 qL_prim(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => qL_prim(i)%vf(l)%sf
+                                    idwbuff(2)%beg:, &
+                                    idwbuff(3)%beg:) => qL_prim(i)%vf(l)%sf
                 qR_prim(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => qR_prim(i)%vf(l)%sf
+                                    idwbuff(2)%beg:, &
+                                    idwbuff(3)%beg:) => qR_prim(i)%vf(l)%sf
                 !$acc enter data attach(qR_prim(i)%vf(l)%sf)
                 !$acc enter data attach(qL_prim(i)%vf(l)%sf)
             end do
@@ -742,8 +742,8 @@ contains
 
         if (mpp_lim .and. bubbles_euler) then
             alf_sum%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) => alf_sum%sf
+                       idwbuff(2)%beg:, &
+                       idwbuff(3)%beg:) => alf_sum%sf
         end if
 
         if (viscous) then
@@ -789,13 +789,13 @@ contains
                 do l = mom_idx%beg, mom_idx%end
                     !$acc exit data detach(dqL_prim_dx_n(i)%vf(l)%sf)
                     dqL_prim_dx_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                        idwbuff(2)%beg:, &
-                        idwbuff(3)%beg:) => dqL_prim_dx_n(i)%vf(l)%sf
+                                              idwbuff(2)%beg:, &
+                                              idwbuff(3)%beg:) => dqL_prim_dx_n(i)%vf(l)%sf
                     !$acc enter data attach(dqL_prim_dx_n(i)%vf(l)%sf)
                     !$acc exit data detach(dqR_prim_dx_n(i)%vf(l)%sf)
                     dqR_prim_dx_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                        idwbuff(2)%beg:, &
-                        idwbuff(3)%beg:) => dqR_prim_dx_n(i)%vf(l)%sf
+                                              idwbuff(2)%beg:, &
+                                              idwbuff(3)%beg:) => dqR_prim_dx_n(i)%vf(l)%sf
                     !$acc enter data attach(dqR_prim_dx_n(i)%vf(l)%sf)
                 end do
 
@@ -803,13 +803,13 @@ contains
                     do l = mom_idx%beg, mom_idx%end
                         !$acc exit data detach(dqL_prim_dy_n(i)%vf(l)%sf)
                         dqL_prim_dy_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                            idwbuff(2)%beg:, &
-                            idwbuff(3)%beg:) => dqL_prim_dy_n(i)%vf(l)%sf
+                                                  idwbuff(2)%beg:, &
+                                                  idwbuff(3)%beg:) => dqL_prim_dy_n(i)%vf(l)%sf
                         !$acc enter data attach(dqL_prim_dy_n(i)%vf(l)%sf)
                         !$acc exit data detach(dqR_prim_dy_n(i)%vf(l)%sf)
                         dqR_prim_dy_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                            idwbuff(2)%beg:, &
-                            idwbuff(3)%beg:) => dqR_prim_dy_n(i)%vf(l)%sf
+                                                  idwbuff(2)%beg:, &
+                                                  idwbuff(3)%beg:) => dqR_prim_dy_n(i)%vf(l)%sf
                         !$acc enter data attach(dqR_prim_dy_n(i)%vf(l)%sf)
                     end do
                 end if
@@ -818,14 +818,14 @@ contains
                     do l = mom_idx%beg, mom_idx%end
                         !$acc exit data detach(dqL_prim_dz_n(i)%vf(l)%sf)
                         dqL_prim_dz_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                            idwbuff(2)%beg:, &
-                            idwbuff(3)%beg:) => dqL_prim_dz_n(i)%vf(l)%sf
+                                                  idwbuff(2)%beg:, &
+                                                  idwbuff(3)%beg:) => dqL_prim_dz_n(i)%vf(l)%sf
                         !$acc enter data attach(dqL_prim_dz_n(i)%vf(l)%sf)
 
                         !$acc exit data detach(dqR_prim_dz_n(i)%vf(l)%sf)
                         dqR_prim_dz_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                            idwbuff(2)%beg:, &
-                            idwbuff(3)%beg:) => dqR_prim_dz_n(i)%vf(l)%sf
+                                                  idwbuff(2)%beg:, &
+                                                  idwbuff(3)%beg:) => dqR_prim_dz_n(i)%vf(l)%sf
                         !$acc enter data attach(dqR_prim_dz_n(i)%vf(l)%sf)
                     end do
                 end if
@@ -841,13 +841,13 @@ contains
                 do l = 1, sys_size
                     !$acc exit data detach(flux_n(i)%vf(l)%sf)
                     flux_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                             idwbuff(2)%beg:, &
-                             idwbuff(3)%beg:) => flux_n(i)%vf(l)%sf
+                                       idwbuff(2)%beg:, &
+                                       idwbuff(3)%beg:) => flux_n(i)%vf(l)%sf
                     !$acc enter data attach(flux_n(i)%vf(l)%sf)
                     !$acc exit data detach(flux_gsrc_n(i)%vf(l)%sf)
                     flux_gsrc_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                            idwbuff(2)%beg:, &
-                            idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
+                                            idwbuff(2)%beg:, &
+                                            idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
                     !$acc enter data attach(flux_gsrc_n(i)%vf(l)%sf)
                 end do
 
@@ -855,24 +855,24 @@ contains
                     do l = mom_idx%beg, E_idx
                         !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
                         flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                                 idwbuff(2)%beg:, &
-                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
+                                               idwbuff(2)%beg:, &
+                                               idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
                         !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
                     end do
                 end if
 
                 !$acc exit data detach(flux_src_n(i)%vf(adv_idx%beg)%sf)
                 flux_src_n(i)%vf(adv_idx%beg)%sf(idwbuff(1)%beg:, &
-                         idwbuff(2)%beg:, &
-                         idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
+                                                 idwbuff(2)%beg:, &
+                                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
                 !$acc enter data attach(flux_src_n(i)%vf(adv_idx%beg)%sf)
 
                 if (riemann_solver == 1) then
                     do l = adv_idx%beg + 1, adv_idx%end
                         !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
                         flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                                 idwbuff(2)%beg:, &
-                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
+                                               idwbuff(2)%beg:, &
+                                               idwbuff(3)%beg:) => flux_src_n(i)%vf(adv_idx%beg)%sf
                         !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
                     end do
                 end if
@@ -881,8 +881,8 @@ contains
                     do l = chemxb, chemxe
                         !$acc exit data detach(flux_src_n(i)%vf(l)%sf)
                         flux_src_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                                 idwbuff(2)%beg:, &
-                                 idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
+                                               idwbuff(2)%beg:, &
+                                               idwbuff(3)%beg:) => flux_src_n(i)%vf(l)%sf
                         !$acc enter data attach(flux_src_n(i)%vf(l)%sf)
                     end do
                 end if
@@ -891,8 +891,8 @@ contains
                 do l = 1, sys_size
                     !$acc exit data detach(flux_gsrc_n(i)%vf(l)%sf)
                     flux_gsrc_n(i)%vf(l)%sf(idwbuff(1)%beg:, &
-                        idwbuff(2)%beg:, &
-                        idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
+                                            idwbuff(2)%beg:, &
+                                            idwbuff(3)%beg:) => flux_gsrc_n(i)%vf(l)%sf
                     !$acc enter data attach(flux_gsrc_n(i)%vf(l)%sf)
                 end do
             end if
@@ -914,7 +914,7 @@ contains
             end if
         end do
         ! END: Allocation/Association of flux_n, flux_src_n, and flux_gsrc_n ===
-        
+
         !$acc parallel loop collapse(4) gang vector default(present)
         do id = 1, num_dims
             do i = 1, sys_size
@@ -928,7 +928,6 @@ contains
             end do
         end do
     end subroutine s_reinitialize_rhs_module
-
 
     subroutine s_compute_rhs(q_cons_vf, q_T_sf, q_prim_vf, rhs_vf, pb, rhs_pb, mv, rhs_mv, t_step, time_avg)
 
@@ -947,11 +946,11 @@ contains
 
         call nvtxStartRange("COMPUTE-RHS")
 
-#ifdef MFC_MPI        
+#ifdef MFC_MPI
         t_start = MPI_WTIME()
 #else
         call cpu_time(t_start)
-#endif        
+#endif
         ! Association/Population of Working Variables
         !$acc parallel loop collapse(4) gang vector default(present)
         do i = 1, sys_size
@@ -995,9 +994,9 @@ contains
         call nvtxEndRange
 #ifdef MFC_MPI
         t_pause = MPI_WTIME()
-#else        
+#else
         call cpu_time(t_pause)
-#endif        
+#endif
 
         call nvtxStartRange("RHS-COMMUNICATION")
         call s_populate_variables_buffers(q_prim_qp%vf, pb, mv)
@@ -1007,11 +1006,11 @@ contains
         if (hyperelasticity) call s_hyperelastic_rmt_stress_update(q_cons_qp%vf, q_prim_qp%vf)
         call nvtxEndRange
 
-#ifdef MFC_MPI        
+#ifdef MFC_MPI
         t_resume = MPI_WTIME()
-#else        
+#else
         call cpu_time(t_resume)
-#endif        
+#endif
         if (cfl_dt) then
             if (mytime >= t_stop) return
         else
@@ -1251,19 +1250,19 @@ contains
             end do
         end if
 
-#ifdef MFC_MPI        
+#ifdef MFC_MPI
         t_finish = MPI_WTIME()
-#else        
+#else
         call cpu_time(t_finish)
-#endif        
+#endif
 
-        t_last_save = int((t_step - t_step_start)/ t_step_save) * t_step_save
+        t_last_save = int((t_step - t_step_start)/t_step_save)*t_step_save
 
         if ((t_step - t_last_save) >= 4) then
             t_finish = t_finish - t_resume + t_pause
             time_avg = (abs(t_finish - t_start) + &
-                (t_step - 4 - t_last_save)*time_avg)/&
-                (t_step - 3 - t_last_save)
+                        (t_step - 4 - t_last_save)*time_avg)/ &
+                       (t_step - 3 - t_last_save)
         else
             time_avg = 0._wp
         end if
@@ -2349,7 +2348,7 @@ contains
                 is3%beg = is3%beg + buff_size_lb(5)
                 is3%end = is3%end - buff_size_lb(6)
             end if
-            s1 = startx ; s2 = starty ; s3 = startz
+            s1 = startx; s2 = starty; s3 = startz
 
         elseif (norm_dir == 2) then
             is1 = idwbuff(2); is2 = idwbuff(1); is3 = idwbuff(3)
@@ -2363,7 +2362,7 @@ contains
                 is3%beg = is3%beg + buff_size_lb(5)
                 is3%end = is3%end - buff_size_lb(6)
             end if
-           s1 = starty ; s2 = startx ; s3 = startz
+            s1 = starty; s2 = startx; s3 = startz
 
         else
             is1 = idwbuff(3); is2 = idwbuff(2); is3 = idwbuff(1)
@@ -2375,7 +2374,7 @@ contains
             is2%end = is2%end - buff_size_lb(4)
             is3%beg = is3%beg + buff_size_lb(1)
             is3%end = is3%end - buff_size_lb(2)
-            s1 = startz ; s2 = starty ; s3 = startx
+            s1 = startz; s2 = starty; s3 = startx
 
         end if
 

@@ -129,7 +129,7 @@ contains
 #endif
 
     end subroutine s_reinitialize_mpi_proxy_module
-     !>  Since only the processor with rank 0 reads and verifies
+    !>  Since only the processor with rank 0 reads and verifies
         !!      the consistency of user inputs, these are initially not
         !!      available to the other processors. Then, the purpose of
         !!      this subroutine is to distribute the user inputs to the
@@ -494,7 +494,7 @@ contains
                 call MPI_ALLGATHER(p, 1, MPI_INTEGER, proc_counts_z, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
 
                 call MPI_ALLGATHER(proc_coords(3), 1, MPI_INTEGER, proc_coords_z, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
-               ! ==================================================================
+                ! ==================================================================
                 ! 2D Cartesian Processor Topology
             else
 

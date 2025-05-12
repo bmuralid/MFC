@@ -31,7 +31,7 @@ module m_weno
     use m_mpi_proxy
 
     private; public :: s_initialize_weno_module, s_initialize_weno, s_finalize_weno_module, s_weno, &
-        s_reinitialize_weno_module
+ s_reinitialize_weno_module
 
     !> @name The cell-average variables that will be WENO-reconstructed. Formerly, they
     !! are stored in v_vf. However, they are transferred to v_rs_wsL and v_rs_wsR
@@ -209,8 +209,8 @@ contains
 
         if (weno_order == 1) return
 
-         ! Allocating/Computing WENO Coefficients in x-direction
-        is1_weno%beg = -buff_size; is1_weno%end = m - is1_weno%beg
+        ! Allocating/Computing WENO Coefficients in x-direction ============
+        is1_weno%beg = -buff_size; is1_weno%end = m + buff_size
         if (n == 0) then
             is2_weno%beg = 0
         else

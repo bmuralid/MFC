@@ -26,7 +26,7 @@ contains
     subroutine s_mpi_loadbalance_init()
 
         real(wp) :: time_avg
-        real(wp) :: proc_time(0:num_procs -1)
+        real(wp) :: proc_time(0:num_procs - 1)
         logical :: file_exists
 
         integer :: i, istat, ierr
@@ -37,11 +37,11 @@ contains
             if (file_exists) then
                 open (1, file='proc_time_data.dat', status='old', action='read')
                 read (1, *)
-                read(1, '(15F15.8)') (proc_time(i), i = 0, num_procs-1)
+                read (1, '(15F15.8)') (proc_time(i), i=0, num_procs - 1)
                 close (1)
             else
                 time_avg = -1.0d0
-            endif
+            end if
         end if
 
         call MPI_BCAST(proc_time, num_procs, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
@@ -51,20 +51,20 @@ contains
         !     inquire (FILE='repartitioning.dat', EXIST=file_exists)
         !     if (file_exists) then
         !         open(1, file='repartitioning.dat', status='old', action='read')
-        !         read(1, *) 
+        !         read(1, *)
         !         read(1, '(15I5)') proc_coords_x(1:num_procs)
         !         read(1, '(15I5)') proc_coords_y(1:num_procs)
         !         read(1, '(15I5)') proc_coords_z(1:num_procs)
-        !         read(1, *) 
-        !         read(1, *) 
-        !         read(1, '(I5, 9I10)') proc_counts_x 
+        !         read(1, *)
+        !         read(1, *)
+        !         read(1, '(I5, 9I10)') proc_counts_x
         !         if (n > 0) then
         !             read(1, '(I5, 9I10)') proc_counts_y
         !             if (p > 0) then
         !                 read(1, '(I5, 9I10)') proc_counts_z
         !             end if
         !         end if
-        !         read(1, *)             
+        !         read(1, *)
         !         close(1)
         !     end if
         ! endif
@@ -82,7 +82,7 @@ contains
 
         integer :: i, j, k, ierr
         integer :: tmp_val, mx
-        real(wp) :: proc_time(0:num_procs -1)
+        real(wp) :: proc_time(0:num_procs - 1)
         real(wp), dimension(num_procs_x) :: load_factor_x
         real(wp), dimension(num_procs_y) :: load_factor_y
         real(wp), dimension(num_procs_z) :: load_factor_z
@@ -113,7 +113,7 @@ contains
                 open (1, file='proc_time_data.dat', status='new')
                 write (1, '(A10, A15)') "Ranks", "s/step"
             end if
-            write (1, '(15F15.8)') (proc_time(i), i = 0, num_procs-1)
+            write (1, '(15F15.8)') (proc_time(i), i=0, num_procs - 1)
             close (1)
         end if
 
@@ -122,7 +122,7 @@ contains
         ! get the minimum buff_min across all processes 
         call MPI_ALLREDUCE(buff_min_local, buff_min, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
 
-        if (buff_min < buff_min_threshold .and. .not.present(opt)) then
+        if (buff_min < buff_min_threshold .and. .not. present(opt)) then
             return
         end if
 
@@ -133,7 +133,7 @@ contains
         ! get the std deviation of the proc_time array
         max_load_imbalance = 0.0d0
         if (proc_rank == 0) then
-            load_factor = proc_time / minval(proc_time) - 1.0d0
+            load_factor = proc_time/minval(proc_time) - 1.0d0
             max_load_imbalance = maxval(abs(load_factor))
             ! proc_time_std = sqrt(sum((proc_time - sum(proc_time)/num_procs)**2)/num_procs)
             ! proc_time_std = proc_time_std/sum(proc_time)/num_procs
@@ -152,7 +152,7 @@ contains
             load_factor_y = 0.0d0
             load_factor_z = 0.0d0
             do i = 1, num_procs
-                load_factor(i) = proc_time(i-1) / minval(proc_time)
+                load_factor(i) = proc_time(i - 1)/minval(proc_time)
                 ! X -direction
                 do j = 1, num_procs_x
                     if (proc_coords_x(i) == j - 1) then
@@ -187,7 +187,7 @@ contains
             end if
             if (p > 0) then
                 call s_redistribute(pz, load_factor_z, mx, new_dist_z, new_displ_z)
-            end If
+            end if
             istat = 0
         end if
 
@@ -214,7 +214,7 @@ contains
             diff_count_idx(2) = tmp_val - n
             n = tmp_val
 
-            if ( p > 0) then
+            if (p > 0) then
                 !
                 if (proc_rank == 0) then
                     do i = 1, num_procs
@@ -231,7 +231,7 @@ contains
 
         if (proc_rank == 0) then
             do i = 1, num_procs
-                buffer(i) = new_displ_x(proc_coords_x(i) + 1) 
+                buffer(i) = new_displ_x(proc_coords_x(i) + 1)
             end do
         end if
         call s_mpi_scatter(buffer, tmp_val)
@@ -241,7 +241,7 @@ contains
         if (n > 0) then
             if (proc_rank == 0) then
                 do i = 1, num_procs
-                    buffer(i) = new_displ_y(proc_coords_y(i) + 1) 
+                    buffer(i) = new_displ_y(proc_coords_y(i) + 1)
                 end do
             end if
             call s_mpi_scatter(buffer, tmp_val)
@@ -251,7 +251,7 @@ contains
             if (p > 0) then
                 if (proc_rank == 0) then
                     do i = 1, num_procs
-                        buffer(i) = new_displ_z(proc_coords_z(i) + 1) 
+                        buffer(i) = new_displ_z(proc_coords_z(i) + 1)
                     end do
                 end if
                 call s_mpi_scatter(buffer, tmp_val)
@@ -267,31 +267,31 @@ contains
 
             if (p > 0) then
                 call MPI_ALLGATHER(p, 1, MPI_INTEGER, proc_counts_z, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
-            endif
-        endif
+            end if
+        end if
 
         if (proc_rank == 0) then
             inquire (FILE='repartitioning.dat', EXIST=file_exists)
             if (file_exists) then
-                open(1, file='repartitioning.dat', status='old', position='append')
+                open (1, file='repartitioning.dat', status='old', position='append')
             else
-                open(1, file='repartitioning.dat', status='new')
-                write(1, '(I5)') num_procs
-                write(1, '(15I5)') proc_coords_x(1:num_procs)
-                write(1, '(15I5)') proc_coords_y(1:num_procs)
-                write(1, '(15I5)') proc_coords_z(1:num_procs)
-            endif
-            write(1, '(A, I5)') 'buff min: ', buff_min
-            write(1, '(A, F10.5)') 'max. load imbalance: ', max_load_imbalance
-            write(1, '(I5, 9I10)') proc_counts_x 
+                open (1, file='repartitioning.dat', status='new')
+                write (1, '(I5)') num_procs
+                write (1, '(15I5)') proc_coords_x(1:num_procs)
+                write (1, '(15I5)') proc_coords_y(1:num_procs)
+                write (1, '(15I5)') proc_coords_z(1:num_procs)
+            end if
+            write (1, '(A, I5)') 'buff min: ', buff_min
+            write (1, '(A, F10.5)') 'max. load imbalance: ', max_load_imbalance
+            write (1, '(I5, 9I10)') proc_counts_x
             if (n > 0) then
-                write(1, '(I5, 9I10)') proc_counts_y
+                write (1, '(I5, 9I10)') proc_counts_y
                 if (p > 0) then
-                    write(1, '(I5, 9I10)') proc_counts_z
+                    write (1, '(I5, 9I10)') proc_counts_z
                 end if
             end if
-            write(1, *) '----------------------------------------'
-            close(1)
+            write (1, *) '----------------------------------------'
+            close (1)
         end if
 
         call s_mpi_barrier()
@@ -398,14 +398,14 @@ contains
         do i = 1, nsz
             max_diff = max(max_diff, abs(new_dist(i) - counts(i)))
         end do
-#ifdef DEBUG        
+#ifdef DEBUG
         if (sum(new_dist) /= sum(counts)) then
             print *, 'Error: sum(new_dist) /= sum(counts)'
             print *, 'sum(new_dist) = ', sum(new_dist)
             print *, 'sum(counts) = ', sum(counts)
             error stop 'Error: sum(new_dist) /= sum(counts)'
         end if
-#endif        
+#endif
         deallocate (new_dist_real)
     end subroutine s_redistribute
 

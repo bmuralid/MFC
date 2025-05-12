@@ -315,8 +315,8 @@ contains
                 !$acc update host(q_cons_ts(i)%vf(j)%sf)
                 !$acc exit data detach(q_cons_ts(i)%vf(j)%sf)
                 q_cons_ts(i)%vf(j)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_cons_ts(i)%vf(j)%sf
+                                      idwbuff(2)%beg:, &
+                                      idwbuff(3)%beg:) => q_cons_ts(i)%vf(j)%sf
                 !$acc enter data attach(q_cons_ts(i)%vf(j)%sf)
                 !$acc update device(q_cons_ts(i)%vf(j)%sf)
             end do
@@ -328,8 +328,8 @@ contains
                 do j = 1, sys_size
                     !$acc exit data detach(q_prim_ts(i)%vf(j)%sf)
                     q_prim_ts(i)%vf(j)%sf(idwbuff(1)%beg:, &
-                        idwbuff(2)%beg:, &
-                        idwbuff(3)%beg:) => q_prim_ts(i)%vf(j)%sf
+                                          idwbuff(2)%beg:, &
+                                          idwbuff(3)%beg:) => q_prim_ts(i)%vf(j)%sf
                     !$acc enter data attach(q_prim_ts(i)%vf(j)%sf)
                 end do
             end do
@@ -338,8 +338,8 @@ contains
         do i = 1, adv_idx%end
             !$acc exit data detach(q_prim_vf(i)%sf)
             q_prim_vf(i)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) => q_prim_vf(i)%sf
+                            idwbuff(2)%beg:, &
+                            idwbuff(3)%beg:) => q_prim_vf(i)%sf
             !$acc enter data attach(q_prim_vf(i)%sf)
             ! @:ACC_SETUP_SFs(q_prim_vf(i))
         end do
@@ -348,16 +348,16 @@ contains
             do i = bub_idx%beg, bub_idx%end
                 !$acc exit data detach(q_prim_vf(i)%sf)
                 q_prim_vf(i)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_prim_vf(i)%sf
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => q_prim_vf(i)%sf
                 !$acc enter data attach(q_prim_vf(i)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(i))
             end do
             if (adv_n) then
                 !$acc exit data detach(q_prim_vf(n_idx)%sf)
                 q_prim_vf(n_idx)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_prim_vf(n_idx)%sf
+                                    idwbuff(2)%beg:, &
+                                    idwbuff(3)%beg:) => q_prim_vf(n_idx)%sf
                 !$acc enter data attach(q_prim_vf(n_idx)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(n_idx))
             end if
@@ -368,8 +368,8 @@ contains
             do i = stress_idx%beg, stress_idx%end
                 !$acc exit data detach(q_prim_vf(i)%sf)
                 q_prim_vf(i)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_prim_vf(i)%sf
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => q_prim_vf(i)%sf
                 !$acc enter data attach(q_prim_vf(i)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(i))
             end do
@@ -379,8 +379,8 @@ contains
             do i = internalEnergies_idx%beg, internalEnergies_idx%end
                 !$acc exit data detach(q_prim_vf(i)%sf)
                 q_prim_vf(i)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_prim_vf(i)%sf
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => q_prim_vf(i)%sf
                 !$acc enter data attach(q_prim_vf(i)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(i))
             end do
@@ -389,8 +389,8 @@ contains
         if (surface_tension) then
             !$acc exit data detach(q_prim_vf(c_idx)%sf)
             q_prim_vf(c_idx)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:) => q_prim_vf(c_idx)%sf
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => q_prim_vf(c_idx)%sf
             !$acc enter data attach(q_prim_vf(c_idx)%sf)
             ! @:ACC_SETUP_SFs(q_prim_vf(c_idx))
         end if
@@ -399,8 +399,8 @@ contains
             do i = chemxb, chemxe
                 !$acc exit data detach(q_prim_vf(i)%sf)
                 q_prim_vf(i)%sf(idwbuff(1)%beg:, &
-                    idwbuff(2)%beg:, &
-                    idwbuff(3)%beg:) => q_prim_vf(i)%sf
+                                idwbuff(2)%beg:, &
+                                idwbuff(3)%beg:) => q_prim_vf(i)%sf
                 !$acc enter data attach(q_prim_vf(i)%sf)
                 ! @:ACC_SETUP_SFs(q_prim_vf(i))
             end do
@@ -410,28 +410,28 @@ contains
         if (qbmm) then
             !$acc exit data detach(pb_ts(1)%sf)
             pb_ts(1)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:, 1:, 1:) => pb_ts(1)%sf
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:, 1:, 1:) => pb_ts(1)%sf
             !$acc enter data attach(pb_ts(1)%sf)
             ! @:ACC_SETUP_SFs(pb_ts(1))
             !$acc exit data detach(pb_ts(2)%sf)
             pb_ts(2)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:, 1:, 1:) => pb_ts(2)%sf
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:, 1:, 1:) => pb_ts(2)%sf
             !$acc enter data attach(pb_ts(2)%sf)
             ! @:ACC_SETUP_SFs(pb_ts(2))
 
             !$acc exit data detach(mv_ts(1)%sf)
             mv_ts(1)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:, 1:, 1:) => mv_ts(1)%sf
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:, 1:, 1:) => mv_ts(1)%sf
             !$acc enter data attach(mv_ts(1)%sf)
             ! @:ACC_SETUP_SFs(mv_ts(1))
 
             !$acc exit data detach(mv_ts(2)%sf)
             mv_ts(2)%sf(idwbuff(1)%beg:, &
-                idwbuff(2)%beg:, &
-                idwbuff(3)%beg:, 1:, 1:) => mv_ts(2)%sf
+                        idwbuff(2)%beg:, &
+                        idwbuff(3)%beg:, 1:, 1:) => mv_ts(2)%sf
             !$acc enter data attach(mv_ts(2)%sf)
             ! @:ACC_SETUP_SFs(mv_ts(2))
         end if
@@ -439,8 +439,8 @@ contains
         do i = 1, sys_size
             !$acc exit data detach(rhs_vf(i)%sf)
             rhs_vf(i)%sf(-buff_size_lb(1):, &
-                -buff_size_lb(3):, &
-                -buff_size_lb(5):) => rhs_vf(i)%sf
+                         -buff_size_lb(3):, &
+                         -buff_size_lb(5):) => rhs_vf(i)%sf
             !$acc enter data attach(rhs_vf(i)%sf)
             ! @:ACC_SETUP_SFs(rhs_vf(i))
         end do

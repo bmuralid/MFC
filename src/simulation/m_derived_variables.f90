@@ -74,19 +74,19 @@ contains
             end if
 
             allocate (accel_mag(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
             allocate (x_accel(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                              -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                              -buff_size_lb(5) + 0:p + buff_size_lb(6)))
             if (n > 0) then
                 allocate (y_accel(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                    -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                    -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                  -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                  -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 if (p > 0) then
                     allocate (z_accel(-buff_size_lb(1) + 0:m + buff_size_lb(2), &
-                        -buff_size_lb(3) + 0:n + buff_size_lb(4), &
-                        -buff_size_lb(5) + 0:p + buff_size_lb(6)))
+                                      -buff_size_lb(3) + 0:n + buff_size_lb(4), &
+                                      -buff_size_lb(5) + 0:p + buff_size_lb(6)))
                 end if
             end if
         end if

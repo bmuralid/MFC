@@ -65,7 +65,7 @@ module m_variables_conversion
     real(wp), allocatable, dimension(:, :, :), public :: gamma_sf !< Scalar sp. heat ratio function
     real(wp), allocatable, dimension(:, :, :), public :: pi_inf_sf !< Scalar liquid stiffness function
     real(wp), allocatable, dimension(:, :, :), public :: qv_sf !< Scalar liquid energy reference function
-    interface 
+    interface
         subroutine c_sleep(microsec) bind(C, name="usleep")
             import :: c_int
             integer(c_int), value :: microsec
