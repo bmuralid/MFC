@@ -19,6 +19,9 @@ module m_mpi_common
     use m_helper
 
     use m_nvtx
+#ifdef MFC_OpenACC
+    use openacc
+#endif
 
     implicit none
 
@@ -99,6 +102,105 @@ contains
 #endif
 
     end subroutine s_initialize_mpi_common_module
+    !> The computation of parameters, the allocation of memory,
+        !!      the association of pointers and/or the execution of any
+        !!      other procedures that are necessary to setup the module.
+    subroutine s_reinitialize_mpi_common_module
+
+#ifdef MFC_MPI
+
+        ! Allocating q_prims_buff_send/recv and ib_buff_send/recv. Please note that
+        ! for the sake of simplicity, both variables are provided sufficient
+        ! storage to hold the largest buffer in the computational domain.
+#ifdef MFC_SIMULATION
+        if (qbmm .and. .not. polytropic) then
+            if (n > 0) then
+                if (p > 0) then
+                    @:REDEALLOCATE(q_prims_buff_send)
+                    @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (m + 2*buff_size + 1)* &
+                                             & (n + 2*buff_size + 1)* &
+                                             & (p + 2*buff_size + 1)/ &
+                                             & (min(m, n, p) + 2*buff_size + 1)))
+                else
+                    @:REDEALLOCATE(q_prims_buff_send)
+                    @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (max(m, n) + 2*buff_size + 1)))
+                end if
+            else
+                @:REDEALLOCATE(q_prims_buff_send)
+                @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*(sys_size + 2*nb*4)))
+            end if
+            if (n > 0) then
+                if (p > 0) then
+                    @:REDEALLOCATE(q_prims_buff_recv)
+                    @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (m + 2*buff_size + 1)* &
+                                             & (n + 2*buff_size + 1)* &
+                                             & (p + 2*buff_size + 1)/ &
+                                             & (min(m, n, p) + 2*buff_size + 1)))
+                else
+                    @:REDEALLOCATE(q_prims_buff_recv)
+                    @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*(sys_size + 2*nb*4)* &
+                                             & (max(m, n) + 2*buff_size + 1)))
+                end if
+            else
+                @:REDEALLOCATE(q_prims_buff_recv)
+                @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*(sys_size + 2*nb*4)))
+            end if
+            ! @:REDEALLOCATE(q_prims_buff_recv)
+            ! @:REALLOCATE(q_prims_buff_recv(0:ubound(q_prims_buff_send, 1)))
+
+            v_size = sys_size + 2*nb*4
+        else
+#endif
+            if (n > 0) then
+                if (p > 0) then
+                    @:REDEALLOCATE(q_prims_buff_send)
+                    @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*sys_size* &
+                                             & (m + 2*buff_size + 1)* &
+                                             & (n + 2*buff_size + 1)* &
+                                             & (p + 2*buff_size + 1)/ &
+                                             & (min(m, n, p) + 2*buff_size + 1)))
+                else
+                    @:REDEALLOCATE(q_prims_buff_send)
+                    @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*sys_size* &
+                                             & (max(m, n) + 2*buff_size + 1)))
+                end if
+            else
+                @:REDEALLOCATE(q_prims_buff_send)
+                @:REALLOCATE(q_prims_buff_send(0:-1 + buff_size*sys_size))
+            end if
+            if (n > 0) then
+                if (p > 0) then
+                    @:REDEALLOCATE(q_prims_buff_recv)
+                    @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*sys_size* &
+                                             & (m + 2*buff_size + 1)* &
+                                             & (n + 2*buff_size + 1)* &
+                                             & (p + 2*buff_size + 1)/ &
+                                             & (min(m, n, p) + 2*buff_size + 1)))
+                else
+                    @:REDEALLOCATE(q_prims_buff_recv)
+                    @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*sys_size* &
+                                             & (max(m, n) + 2*buff_size + 1)))
+                end if
+            else
+                @:REDEALLOCATE(q_prims_buff_recv)
+                @:REALLOCATE(q_prims_buff_recv(0:-1 + buff_size*sys_size))
+            end if
+
+
+            ! @:REDEALLOCATE(q_prims_buff_recv)
+            ! @:REALLOCATE(q_prims_buff_recv(0:ubound(q_prims_buff_send, 1)))
+
+            v_size = sys_size
+#ifdef MFC_SIMULATION
+        end if
+#endif
+
+#endif
+
+    end subroutine s_reinitialize_mpi_common_module
 
     !> The subroutine initializes the MPI execution environment
         !!      and queries both the number of processors which will be

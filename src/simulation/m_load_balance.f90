@@ -69,7 +69,7 @@ contains
         !     end if
         ! endif
 
-        if (time_avg > 0.0d0) call s_mpi_loadbalance_computational_domain(time_avg, istat, 40)
+        if (time_avg > 0.0d0) call s_mpi_loadbalance_computational_domain(time_avg, istat, 60)
 
     end subroutine s_mpi_loadbalance_init
 
@@ -96,7 +96,7 @@ contains
         real(wp) :: load_factor(num_procs)
         real(wp) :: max_load_imbalance
         logical :: file_exists
-        integer :: buff_min
+        integer :: buff_min, buff_min_local
         integer, parameter  :: buff_min_threshold = 10
 
         istat = 1
@@ -117,14 +117,10 @@ contains
             close (1)
         end if
 
-        buff_min = minval(buff_size_lb)
+        buff_min_local = minval(buff_size_lb)
 
         ! get the minimum buff_min across all processes 
-        if (proc_rank == 0) then
-            call MPI_ALLREDUCE(MPI_IN_PLACE, buff_min, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
-        else
-            call MPI_ALLREDUCE(buff_min, buff_min, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
-        end if
+        call MPI_ALLREDUCE(buff_min_local, buff_min, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
 
         if (buff_min < buff_min_threshold .and. .not.present(opt)) then
             return

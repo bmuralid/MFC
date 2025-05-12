@@ -14,12 +14,26 @@
     @:LOG({'@:ALLOCATE(${re.sub(' +', ' ', ', '.join(args))}$)'})
     allocate (${', '.join(args)}$)
     !$acc enter data create(${', '.join(args)}$)
+    !$acc wait
 #:enddef ALLOCATE
+
+#:def REALLOCATE(*args)
+    @:LOG({'@:ALLOCATE(${re.sub(' +', ' ', ', '.join(args))}$)'})
+    allocate (${', '.join(args)}$)
+    !$acc wait
+#:enddef REALLOCATE
+
+#:def REDEALLOCATE(*args)
+    @:LOG({'@:DEALLOCATE(${re.sub(' +', ' ', ', '.join(args))}$)'})
+    deallocate (${', '.join(args)}$)
+    !$acc wait
+#:enddef REDEALLOCATE
 
 #:def DEALLOCATE(*args)
     @:LOG({'@:DEALLOCATE(${re.sub(' +', ' ', ', '.join(args))}$)'})
     deallocate (${', '.join(args)}$)
-    !$acc exit data delete(${', '.join(args)}$)
+    !$acc exit data delete(${', '.join(args)}$) 
+    !$acc wait
 #:enddef DEALLOCATE
 
 #:def ACC_SETUP_VFs(*args)

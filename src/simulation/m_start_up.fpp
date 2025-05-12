@@ -1409,6 +1409,8 @@ contains
 
         call s_reinitialize_global_parameters_module()
 
+        call s_reinitialize_mpi_common_module()
+
         call s_reinitialize_mpi_proxy_module()
 
         call s_reinitialize_grid()
